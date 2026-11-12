@@ -1,0 +1,119 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Create your account";
+}
+
+<div class="auth-shell">
+    <div class="container">
+        <div class="auth-card auth-card-wide">
+            <div class="auth-head">
+                <h1 class="mb-1">Create your account</h1>
+                <p>Join as a candidate looking for work, or as an employer hiring in Nepal.</p>
+            </div>
+
+            <div class="card card-pad">
+                <form asp-controller="Account" asp-action="Register" method="post" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+                    <fieldset class="border-0 p-0 m-0 mb-3">
+                        <legend class="form-label">I am joining as</legend>
+                        <div class="account-type-toggle">
+                            <div class="account-type-option">
+                                <input type="radio" asp-for="RegisterAsJobSeeker" id="typeCandidate" value="true" />
+                                <label for="typeCandidate">
+                                    &#128188; Candidate
+                                    <small>I am looking for a job</small>
+                                </label>
+                            </div>
+                            <div class="account-type-option">
+                                <input type="radio" asp-for="RegisterAsJobSeeker" id="typeEmployer" value="false" />
+                                <label for="typeEmployer">
+                                    &#127970; Employer
+                                    <small>I am hiring</small>
+                                </label>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="field-row field-row-2">
+                        <div class="field">
+                            <label asp-for="FirstName" class="form-label"></label>
+                            <input asp-for="FirstName" class="form-control" autocomplete="given-name" />
+                            <span asp-validation-for="FirstName" class="field-validation-error"></span>
+                        </div>
+                        <div class="field">
+                            <label asp-for="LastName" class="form-label"></label>
+                            <input asp-for="LastName" class="form-control" autocomplete="family-name" />
+                            <span asp-validation-for="LastName" class="field-validation-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="field-row field-row-2">
+                        <div class="field">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" autocomplete="email" />
+                            <span asp-validation-for="Email" class="field-validation-error"></span>
+                        </div>
+                        <div class="field">
+                            <label asp-for="PhoneNumber" class="form-label"></label>
+                            <input asp-for="PhoneNumber" class="form-control" placeholder="+977 98XXXXXXXX" autocomplete="tel" />
+                            <span asp-validation-for="PhoneNumber" class="field-validation-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="field" id="employer-fields">
+                        <label asp-for="CompanyName" class="form-label"></label>
+                        <input asp-for="CompanyName" class="form-control" autocomplete="organization" />
+                        <span class="form-text">Required when joining as an employer. You can complete the rest of the company profile later.</span>
+                        <span asp-validation-for="CompanyName" class="field-validation-error"></span>
+                    </div>
+
+                    <div class="field-row field-row-2">
+                        <div class="field">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control" autocomplete="new-password" id="Password" />
+                            <span id="password-hint" class="form-text">Use at least 8 characters with upper case, lower case, a number and a symbol.</span>
+                            <span asp-validation-for="Password" class="field-validation-error"></span>
+                        </div>
+                        <div class="field">
+                            <label asp-for="ConfirmPassword" class="form-label"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="ConfirmPassword" class="field-validation-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-check">
+                        <input asp-for="AcceptTerms" class="form-check-input" />
+                        <label asp-for="AcceptTerms" class="form-check-label"></label>
+                    </div>
+                    <span asp-validation-for="AcceptTerms" class="field-validation-error"></span>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-lg">Create account</button>
+                </form>
+            </div>
+
+            <p class="text-center text-sm mt-3 mb-0">
+                Already registered? <a asp-controller="Account" asp-action="Login">Sign in</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // The company field is only relevant to employers; hide it for candidates.
+        (function () {
+            var companyBlock = document.getElementById('employer-fields');
+            if (!companyBlock) return;
+
+            function sync() {
+                var isEmployer = document.getElementById('typeEmployer').checked;
+                companyBlock.style.display = isEmployer ? '' : 'none';
+            }
+
+            document.getElementById('typeCandidate').addEventListener('change', sync);
+            document.getElementById('typeEmployer').addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+}

@@ -1,0 +1,113 @@
+@model CompanyDetailsViewModel
+@{
+    var company = Model.Company;
+    ViewData["Title"] = company.Name;
+    ViewData["Description"] = company.Description ?? $"{company.Name} on Elevate Workforce Solution";
+}
+
+<div class="page">
+    <div class="container">
+        <nav aria-label="Breadcrumb" class="mb-3 text-sm">
+            <a asp-controller="Companies" asp-action="Index">Companies</a>
+            <span class="text-subtle" aria-hidden="true"> / </span>
+            <span class="text-muted">@company.Name</span>
+        </nav>
+
+        <div class="card card-pad mb-3">
+            <div class="company-header">
+                <span class="company-logo" aria-hidden="true">@company.Name.Initials()</span>
+                <div class="flex-1">
+                    <h1 class="mb-1">@company.Name</h1>
+                    <p class="text-muted mb-0">
+                        @company.Industry
+                        @if (!string.IsNullOrWhiteSpace(company.Location))
+                        {
+                            <span aria-hidden="true"> &middot; </span>@company.Location
+                        }
+                        @if (company.FoundedYear.HasValue)
+                        {
+                            <span aria-hidden="true"> &middot; </span><text>Est. @company.FoundedYear</text>
+                        }
+                    </p>
+                </div>
+                <a asp-controller="Jobs" asp-action="Index" class="btn btn-primary no-print">
+                    View all jobs
+                </a>
+            </div>
+        </div>
+
+        <div class="detail-layout">
+            <div class="stack">
+                @if (!string.IsNullOrWhiteSpace(company.Description))
+                {
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="prose-block mb-0">
+                                <h3>About @company.Name</h3>
+                                @foreach (var paragraph in company.Description.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <p>@paragraph</p>
+                                }
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(company.About))
+                            {
+                                <div class="prose-block mb-0">
+                                    <h3>Company profile</h3>
+                                    @foreach (var paragraph in company.About.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                                    {
+                                        <p>@paragraph</p>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div>
+                    <div class="section-head row-between">
+                        <h2>Open vacancies at @company.Name</h2>
+                        <span class="badge badge-teal">@company.Vacancies.Count</span>
+                    </div>
+
+                    @if (company.Vacancies.Count == 0)
+                    {
+                        var emptyState = ("&#128188;", "No open vacancies right now", "This company has no active vacancies at the moment. Check back soon.", Url.Action("Index", "Jobs"), "Browse all jobs");
+                        <div class="card">
+                            @await Html.PartialAsync("_EmptyState", emptyState, new ViewDataDictionary(ViewData))
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="grid grid-2">
+                            @foreach (var job in company.Vacancies)
+                            {
+                                <div class="reveal">@await Html.PartialAsync("_JobCard", job)</div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <aside class="detail-aside">
+                <div class="card">
+                    <div class="card-header"><h3>Company details</h3></div>
+                    <div class="card-body">
+                        <dl class="detail-list">
+                            <div><dt>Industry</dt><dd>@(company.Industry ?? "-")</dd></div>
+                            <div><dt>Location</dt><dd>@(company.Location ?? "-")</dd></div>
+                            <div><dt>Company size</dt><dd>@(company.CompanySize?.ToString() ?? "-")</dd></div>
+                            <div><dt>Founded</dt><dd>@(company.FoundedYear?.ToString() ?? "-")</dd></div>
+                            <div><dt>Open roles</dt><dd>@company.ActiveVacancyCount</dd></div>
+                        </dl>
+                        @if (!string.IsNullOrWhiteSpace(company.Website))
+                        {
+                            <a href="@company.Website" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-block mt-3">
+                                Visit website
+                            </a>
+                        }
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>

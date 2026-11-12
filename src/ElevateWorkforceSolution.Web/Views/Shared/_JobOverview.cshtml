@@ -1,0 +1,85 @@
+@model JobDetailDto
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="company-header mb-3">
+            <span class="company-logo" aria-hidden="true">@Model.CompanyName.Initials()</span>
+            <div>
+                <h2 class="mb-1">@Model.CompanyName</h2>
+                @if (!string.IsNullOrWhiteSpace(Model.CompanyIndustry) || !string.IsNullOrWhiteSpace(Model.CompanyLocation))
+                {
+                    <p class="text-sm text-muted mb-0">
+                        @Model.CompanyIndustry
+                        @if (!string.IsNullOrWhiteSpace(Model.CompanyIndustry) && !string.IsNullOrWhiteSpace(Model.CompanyLocation))
+                        {
+                            <span aria-hidden="true"> &middot; </span>
+                        }
+                        @Model.CompanyLocation
+                    </p>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.CompanyAbout))
+        {
+            <p class="text-sm">@Model.CompanyAbout</p>
+        }
+
+        <a asp-controller="Companies" asp-action="Details" asp-route-id="@Model.CompanyId" class="btn btn-outline btn-sm">
+            View company profile
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>Job overview</h3></div>
+    <div class="card-body">
+        <dl class="detail-list">
+            <div>
+                <dt>Salary</dt>
+                <dd>@Model.SalaryMin.FormatSalary(Model.SalaryMax, Model.SalaryCurrency, Model.SalaryPeriod)</dd>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.WorkLocation))
+            {
+                <div>
+                    <dt>Location</dt>
+                    <dd>@Model.WorkLocation</dd>
+                </div>
+            }
+            <div>
+                <dt>Job type</dt>
+                <dd>@Model.JobType.Display()</dd>
+            </div>
+            <div>
+                <dt>Arrangement</dt>
+                <dd>@Model.WorkArrangement.Display()</dd>
+            </div>
+            <div>
+                <dt>Experience</dt>
+                <dd>@Model.ExperienceLevel.Display()</dd>
+            </div>
+            @if (Model.Headcount is > 0)
+            {
+                <div>
+                    <dt>Openings</dt>
+                    <dd>@Model.Headcount</dd>
+                </div>
+            }
+            <div>
+                <dt>Posted</dt>
+                <dd>@Model.PostedDate.ToString("dd MMM yyyy")</dd>
+            </div>
+            @if (Model.ApplicationDeadline.HasValue)
+            {
+                <div>
+                    <dt>Closes</dt>
+                    <dd>@Model.ApplicationDeadline.Value.ToString("dd MMM yyyy")</dd>
+                </div>
+            }
+            <div>
+                <dt>Applicants</dt>
+                <dd>@Model.ApplicationCount</dd>
+            </div>
+        </dl>
+    </div>
+</div>

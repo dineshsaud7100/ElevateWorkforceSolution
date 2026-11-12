@@ -1,0 +1,62 @@
+@model EducationFormViewModel
+@{
+    ViewData["Title"] = "Add education";
+}
+
+<div class="page">
+    <div class="container" style="max-width:640px">
+        <div class="page-header">
+            <h1>Add education</h1>
+            <p>Add a degree, diploma or certification you have completed or are completing.</p>
+        </div>
+
+        <div class="card card-pad">
+            <form asp-controller="Candidate" asp-action="AddEducation" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="JobSeekerId" />
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+                <div class="field">
+                    <label asp-for="Institution" class="form-label"></label>
+                    <input asp-for="Institution" class="form-control" placeholder="e.g. Tribhuvan University" />
+                    <span asp-validation-for="Institution" class="field-validation-error"></span>
+                </div>
+
+                <div class="field-row field-row-2">
+                    <div class="field">
+                        <label asp-for="Degree" class="form-label"></label>
+                        <input asp-for="Degree" class="form-control" placeholder="e.g. Bachelor of Science" />
+                        <span asp-validation-for="Degree" class="field-validation-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="FieldOfStudy" class="form-label"></label>
+                        <input asp-for="FieldOfStudy" class="form-control" placeholder="e.g. Computer Science" />
+                    </div>
+                </div>
+
+                <div class="field-row field-row-2">
+                    <div class="field">
+                        <label asp-for="GraduationYear" class="form-label"></label>
+                        <input asp-for="GraduationYear" class="form-control" type="number" min="1950" max="2100" />
+                        <span asp-validation-for="GraduationYear" class="field-validation-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Grade" class="form-label"></label>
+                        <input asp-for="Grade" class="form-control" placeholder="e.g. 3.4 GPA or Distinction" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="3"
+                              placeholder="Optional: relevant coursework, thesis or achievements."></textarea>
+                </div>
+
+                <div class="row">
+                    <button type="submit" class="btn btn-primary">Save education</button>
+                    <a asp-controller="Candidate" asp-action="Profile" class="btn btn-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

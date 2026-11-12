@@ -1,0 +1,20 @@
+@{
+    ViewData["Title"] = "Access denied";
+}
+
+<div class="auth-shell">
+    <div class="container">
+        <div class="card card-pad text-center" style="max-width:520px;margin-inline:auto">
+            <p class="fw-800" style="font-size:3rem;line-height:1;color:var(--warning);margin-bottom:.5rem">403</p>
+            <h1 class="mb-2">You do not have access to that page</h1>
+            <p class="text-muted">
+                This area belongs to a different type of account. If you think that is wrong,
+                sign out and sign back in with the correct account.
+            </p>
+            <div class="row" style="justify-content:center;margin-top:1.5rem">
+                <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Back to home</a>
+                <a asp-controller="Account" asp-action="Login" class="btn btn-outline">Sign in</a>
+            </div>
+        </div>
+    </div>
+</div>

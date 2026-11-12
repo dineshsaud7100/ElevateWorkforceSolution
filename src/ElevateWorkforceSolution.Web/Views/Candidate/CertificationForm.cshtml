@@ -1,0 +1,49 @@
+@model CertificationFormViewModel
+@{
+    ViewData["Title"] = "Add certification";
+}
+
+<div class="page">
+    <div class="container" style="max-width:560px">
+        <div class="page-header">
+            <h1>Add certification</h1>
+            <p>Certifications, licences and completed training courses all count.</p>
+        </div>
+
+        <div class="card card-pad">
+            <form asp-controller="Candidate" asp-action="AddCertification" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="JobSeekerId" />
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+                <div class="field">
+                    <label asp-for="Name" class="form-label"></label>
+                    <input asp-for="Name" class="form-control" placeholder="e.g. AWS Certified Developer" />
+                    <span asp-validation-for="Name" class="field-validation-error"></span>
+                </div>
+
+                <div class="field">
+                    <label asp-for="IssuingOrganization" class="form-label"></label>
+                    <input asp-for="IssuingOrganization" class="form-control" placeholder="e.g. Amazon Web Services" />
+                    <span asp-validation-for="IssuingOrganization" class="field-validation-error"></span>
+                </div>
+
+                <div class="field-row field-row-2">
+                    <div class="field">
+                        <label asp-for="IssueDate" class="form-label"></label>
+                        <input asp-for="IssueDate" class="form-control" type="date" />
+                    </div>
+                    <div class="field">
+                        <label asp-for="CredentialId" class="form-label"></label>
+                        <input asp-for="CredentialId" class="form-control" placeholder="Optional" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <button type="submit" class="btn btn-primary">Save certification</button>
+                    <a asp-controller="Candidate" asp-action="Profile" class="btn btn-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

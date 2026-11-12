@@ -1,0 +1,47 @@
+@model PagerViewModel
+
+@if (Model.Show)
+{
+    <nav class="pagination-nav" aria-label="Pagination">
+        <div class="row-between">
+            <p class="pager-info mb-0">
+                Showing <strong>@Model.FirstItemIndex</strong>&ndash;<strong>@Model.LastItemIndex</strong>
+                of <strong>@Model.TotalCount</strong>
+            </p>
+            <ul class="pager">
+                <li>
+                    @if (Model.HasPrevious)
+                    {
+                        <a href="@Model.UrlFor(Model.PageNumber - 1)" rel="prev">Prev</a>
+                    }
+                    else
+                    {
+                        <span class="disabled" aria-disabled="true">Prev</span>
+                    }
+                </li>
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    var number = i;
+                    if (number == Model.PageNumber)
+                    {
+                        <li><span class="current" aria-current="page">@number</span></li>
+                    }
+                    else
+                    {
+                        <li><a href="@Model.UrlFor(number)">@number</a></li>
+                    }
+                }
+                <li>
+                    @if (Model.HasNext)
+                    {
+                        <a href="@Model.UrlFor(Model.PageNumber + 1)" rel="next">Next</a>
+                    }
+                    else
+                    {
+                        <span class="disabled" aria-disabled="true">Next</span>
+                    }
+                </li>
+            </ul>
+        </div>
+    </nav>
+}

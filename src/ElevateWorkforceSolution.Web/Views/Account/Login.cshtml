@@ -1,0 +1,46 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Sign in";
+    var returnUrl = ViewData["ReturnUrl"] as string;
+}
+
+<div class="auth-shell">
+    <div class="container">
+        <div class="auth-card">
+            <div class="auth-head">
+                <h1 class="mb-1">Welcome back</h1>
+                <p>Sign in to manage your applications or vacancies.</p>
+            </div>
+
+            <div class="card card-pad">
+                <form asp-controller="Account" asp-action="Login" method="post" novalidate>
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+                    <div class="field">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" autocomplete="username" autofocus />
+                        <span asp-validation-for="Email" class="field-validation-error"></span>
+                    </div>
+
+                    <div class="field">
+                        <label asp-for="Password" class="form-label"></label>
+                        <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                        <span asp-validation-for="Password" class="field-validation-error"></span>
+                    </div>
+
+                    <div class="form-check">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <label asp-for="RememberMe" class="form-check-label"></label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-lg">Sign in</button>
+                </form>
+            </div>
+
+            <p class="text-center text-sm mt-3 mb-0">
+                New to Elevate Workforce? <a asp-controller="Account" asp-action="Register">Create an account</a>
+            </p>
+        </div>
+    </div>
+</div>

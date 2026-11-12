@@ -1,0 +1,103 @@
+@model MyApplicationsViewModel
+@{
+    ViewData["Title"] = "My applications";
+    var query = Context.Request.Query;
+    var baseUrl = "/Applications/MyApplications?" + string.Join('&',
+        query.Where(q => !string.Equals(q.Key, "page", StringComparison.OrdinalIgnoreCase))
+             .Select(q => $"{q.Key}={Uri.EscapeDataString(q.Value.ToString())}")) + "&";
+    var pager = Model.Results.ToPager(baseUrl);
+}
+
+<div class="page">
+    <div class="container">
+        <div class="page-header-row">
+            <div>
+                <h1>My applications</h1>
+                <p class="mb-0">Track where each application stands and read the employer's notes.</p>
+            </div>
+            <a asp-controller="Jobs" asp-action="Index" class="btn btn-primary">Find more jobs</a>
+        </div>
+
+        <div class="filter-pills">
+            <a asp-controller="Applications" asp-action="MyApplications"
+               class="@(Model.Status is null ? "active" : null)">All</a>
+            @foreach (var option in Model.StatusOptions.Where(o => o.Value != ""))
+            {
+                var value = option.Value;
+                <a asp-controller="Applications" asp-action="MyApplications" asp-route-status="@value"
+                   class="@(Model.Status.HasValue && Model.Status.Value.ToString() == value ? "active" : null)">
+                    @option.Text
+                </a>
+            }
+        </div>
+
+        @if (!Model.Results.Items.Any())
+        {
+            var emptyState = ("&#128188;", Model.Status is null ? "You have not applied to anything yet" : "Nothing with that status", Model.Status is null ? "Find a vacancy that fits your profile and apply in a couple of minutes." : "Try a different status filter to see your other applications.", Url.Action("Index", "Jobs"), "Search vacancies");
+            <div class="card">
+                @await Html.PartialAsync("_EmptyState", emptyState, new ViewDataDictionary(ViewData))
+            </div>
+        }
+        else
+        {
+            <div class="stack">
+                @foreach (var app in Model.Results.Items)
+                {
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row-between" style="align-items:flex-start">
+                                <div class="flex-1" style="min-width:220px">
+                                    <h2 class="mb-1" style="font-size:1.05rem">
+                                        <a asp-controller="Applications" asp-action="Details" asp-route-id="@app.Id"
+                                           style="color:var(--navy-900)">@app.JobTitle</a>
+                                    </h2>
+                                    <p class="text-sm text-muted mb-0">
+                                        @app.CompanyName
+                                        @if (!string.IsNullOrWhiteSpace(app.WorkLocation))
+                                        {
+                                            <span aria-hidden="true"> &middot; </span>@app.WorkLocation
+                                        }
+                                    </p>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge @app.Status.CssClass()">@app.StatusLabel</span>
+                                    @if (app.CompatibilityScore is not null)
+                                    {
+                                        <div class="text-xs text-subtle mt-1">@app.CompatibilityScore% match</div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="row-between mt-3">
+                                <p class="text-sm text-subtle mb-0">
+                                    Applied @app.AppliedDate.ToString("dd MMM yyyy")
+                                    @if (app.LastUpdated.HasValue)
+                                    {
+                                        <span aria-hidden="true"> &middot; </span>
+                                        <span>updated @app.LastUpdated.Value.TimeAgo()</span>
+                                    }
+                                </p>
+                                <div class="row" style="gap:.35rem">
+                                    <a asp-controller="Applications" asp-action="Details" asp-route-id="@app.Id" class="btn btn-outline btn-sm">
+                                        View progress
+                                    </a>
+                                    @if (app.CanWithdraw)
+                                    {
+                                        <form asp-controller="Applications" asp-action="Withdraw" method="post"
+                                              data-confirm="Withdraw your application for @app.JobTitle?">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@app.Id" />
+                                            <button type="submit" class="btn btn-outline btn-sm">Withdraw</button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @await Html.PartialAsync("_Pager", pager)
+        }
+    </div>
+</div>

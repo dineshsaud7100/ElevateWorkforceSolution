@@ -1,0 +1,181 @@
+@model CandidateDashboardViewModel
+@{
+    var d = Model.Dashboard;
+    ViewData["Title"] = "Candidate dashboard";
+}
+
+<div class="page">
+    <div class="container">
+        <div class="page-header-row">
+            <div>
+                <h1>Hello, @d.FirstName</h1>
+                <p class="mb-0">Here is where your job search stands today.</p>
+            </div>
+            <div class="row">
+                <a asp-controller="Jobs" asp-action="Index" class="btn btn-primary">Search vacancies</a>
+                <a asp-controller="Candidate" asp-action="Profile" class="btn btn-outline">Complete profile</a>
+            </div>
+        </div>
+
+        @if (Model.Completion.Percentage < 100)
+        {
+            <div class="card card-pad mb-3 reveal">
+                <div class="row-between mb-2">
+                    <div>
+                        <h2 class="mb-1" style="font-size:1.1rem">Your profile is @Model.Completion.Percentage% complete</h2>
+                        <p class="text-sm text-muted mb-0">
+                            A complete profile gets shortlisted more often because employers can see what you can do.
+                        </p>
+                    </div>
+                    <a asp-controller="Candidate" asp-action="Profile" class="btn btn-outline btn-sm">Finish profile</a>
+                </div>
+                <div class="progress" role="progressbar" aria-valuenow="@Model.Completion.Percentage" aria-valuemin="0" aria-valuemax="100"
+                     aria-label="Profile completion">
+                    <div class="progress-bar @(Model.Completion.Percentage < 50 ? "warn" : null)"
+                         data-meter-fill="@Model.Completion.Percentage"></div>
+                </div>
+                @if (Model.Completion.NextSteps.Count > 0)
+                {
+                    <ul class="tag-list mt-2">
+                        @foreach (var step in Model.Completion.NextSteps.Take(3))
+                        {
+                            <li><span class="chip">@step</span></li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
+
+        <div class="grid grid-4 mb-3">
+            <div class="card stat-card">
+                <span class="stat-icon" aria-hidden="true">&#128188;</span>
+                <div>
+                    <div class="stat-value">@d.TotalApplications</div>
+                    <div class="stat-label">Applications</div>
+                </div>
+            </div>
+            <div class="card stat-card">
+                <span class="stat-icon navy" aria-hidden="true">&#128269;</span>
+                <div>
+                    <div class="stat-value">@d.UnderReview</div>
+                    <div class="stat-label">Under review</div>
+                </div>
+            </div>
+            <div class="card stat-card">
+                <span class="stat-icon navy" aria-hidden="true">&#11088;</span>
+                <div>
+                    <div class="stat-value">@d.Shortlisted</div>
+                    <div class="stat-label">Shortlisted</div>
+                </div>
+            </div>
+            <div class="card stat-card">
+                <span class="stat-icon navy" aria-hidden="true">&#128203;</span>
+                <div>
+                    <div class="stat-value">@d.SavedJobs</div>
+                    <div class="stat-label">Saved jobs</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-sidebar">
+            <div class="stack">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="fw-700" style="font-size:1rem">Next steps</h2>
+                    </div>
+                    <div class="card-body stack-sm">
+                        <a asp-controller="Applications" asp-action="MyApplications" class="btn btn-outline btn-block">My applications</a>
+                        <a asp-controller="Applications" asp-action="SavedJobs" class="btn btn-outline btn-block">Saved jobs</a>
+                        <a asp-controller="Candidate" asp-action="Resumes" class="btn btn-outline btn-block">My resumes</a>
+                        <a asp-controller="Candidate" asp-action="Recommendations" class="btn btn-outline btn-block">Recommended jobs</a>
+                        <a asp-controller="Notifications" asp-action="Index" class="btn btn-outline btn-block">
+                            Notifications@(d.UnreadNotifications > 0 ? $" ({d.UnreadNotifications} unread)" : "")
+                        </a>
+                    </div>
+                </div>
+
+                @if (d.RecentNotifications.Count > 0)
+                {
+                    <div class="card">
+                        <div class="card-header"><h2 class="fw-700" style="font-size:1rem">Recent updates</h2></div>
+                        @foreach (var n in d.RecentNotifications.Take(4))
+                        {
+                            <div class="notif @(!n.IsRead ? "unread" : null)">
+                                <span class="notif-icon" aria-hidden="true">&#9993;</span>
+                                <div class="flex-1">
+                                    <p class="notif-title mb-0">@n.Title</p>
+                                    <p class="notif-body mb-0">@n.Message</p>
+                                    <p class="timeline-meta mb-0">@n.CreatedDate.TimeAgo()</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="stack">
+                <div>
+                    <div class="section-head row-between">
+                        <h2>Recent applications</h2>
+                        <a asp-controller="Applications" asp-action="MyApplications" class="btn btn-outline btn-sm">View all</a>
+                    </div>
+
+                    @if (d.RecentApplications.Count == 0)
+                    {
+                        var emptyState = ("&#128188;", "You have not applied to anything yet", "Find a vacancy that fits and send your application in a couple of minutes.", Url.Action("Index", "Jobs"), "Search vacancies");
+                        <div class="card">
+                            @await Html.PartialAsync("_EmptyState", emptyState, new ViewDataDictionary(ViewData))
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="card table-wrap">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Role</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Applied</th>
+                                        <th scope="col"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var app in d.RecentApplications)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <a asp-controller="Applications" asp-action="Details" asp-route-id="@app.Id" class="fw-700">@app.JobTitle</a>
+                                                <div class="text-sm text-muted">@app.CompanyName</div>
+                                            </td>
+                                            <td><span class="badge @app.Status.CssClass()">@app.StatusLabel</span></td>
+                                            <td class="text-sm text-muted">@app.AppliedDate.ToString("dd MMM yyyy")</td>
+                                            <td class="table-actions text-end">
+                                                <a asp-controller="Applications" asp-action="Details" asp-route-id="@app.Id" class="btn btn-outline btn-sm">Track</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+
+                @if (d.RecommendedJobs.Count > 0)
+                {
+                    <div>
+                        <div class="section-head row-between">
+                            <h2>Recommended for you</h2>
+                            <a asp-controller="Candidate" asp-action="Recommendations" class="btn btn-outline btn-sm">See more</a>
+                        </div>
+                        <div class="grid grid-2">
+                            @foreach (var job in d.RecommendedJobs.Take(4))
+                            {
+                                <div class="reveal">@await Html.PartialAsync("_JobCard", job)</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

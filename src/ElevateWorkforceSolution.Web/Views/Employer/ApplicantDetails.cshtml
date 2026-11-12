@@ -1,0 +1,18 @@
+@model ApplicantDetailsViewModel
+@{
+    ViewData["Title"] = "Applicant details";
+    var a = Model.Applicant;
+}
+
+<div class="page"><div class="container"><a asp-action="Applicants" class="btn btn-outline btn-sm">Back to applicants</a><h2 class="mt-3">@a.CandidateName</h2><p class="text-muted">@a.JobTitle · @a.StatusLabel</p>
+<div class="grid grid-2 gap-3 mt-3"><div class="card card-pad"><h3 class="h5">Candidate</h3><dl class="mb-0"><dt class="text-sm">Email</dt><dd>@a.CandidateEmail</dd><dt class="text-sm">Phone</dt><dd>@a.CandidatePhone</dd><dt class="text-sm">Location</dt><dd>@a.CandidateLocation</dd><dt class="text-sm">Experience</dt><dd>@a.YearsOfExperience years</dd></dl></div><div class="card card-pad"><h3 class="h5">Application</h3><dl class="mb-0"><dt class="text-sm">Applied</dt><dd>@a.AppliedDate</dd><dt class="text-sm">Compatibility</dt><dd>@(a.CompatibilityScore ?? 0)%</dd><dt class="text-sm">Resume</dt><dd>@a.ResumeFileName</dd></dl></div></div>
+@if (Model.Profile is not null) { <div class="card card-pad mt-3"><h3 class="h5">Candidate profile</h3><p class="mb-0">@Model.Profile.About</p></div> }
+@if (a.Skills.Count > 0) { <div class="card card-pad mt-3"><h3 class="h5">Skills</h3><div class="tag-list">@foreach(var skill in a.Skills){<span class="chip">@skill</span>}</div></div> }
+<form asp-action="UpdateApplicantStatus" method="post" class="card card-pad mt-3">
+    <input asp-for="ApplicationId" value="@a.ApplicationId" type="hidden" />
+    <input asp-for="JobSeekerId" value="@a.JobSeekerId" type="hidden" />
+    <h3 class="h5">Recruitment decision</h3>
+    <div class="row g-3"><div class="col-md-4"><label asp-for="Status" class="form-label"></label><select asp-for="Status" asp-items="Model.StatusOptions" class="form-select"></select></div><div class="col-md-8"><label asp-for="Remarks" class="form-label"></label><input asp-for="Remarks" class="form-control" placeholder="Optional notes for the candidate" /></div></div>
+    <button type="submit" class="btn btn-primary mt-3">Save recruitment decision</button>
+</form>
+</div></div>

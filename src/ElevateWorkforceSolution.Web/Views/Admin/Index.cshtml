@@ -1,0 +1,91 @@
+@model AdminDashboardViewModel
+@{
+    var d = Model.Dashboard;
+    ViewData["Title"] = "Administrator dashboard";
+}
+
+<div class="page">
+    <div class="container">
+        <div class="page-header-row mb-3">
+            <div>
+                <h1>Platform administration</h1>
+                <p class="mb-0">Monitor users, vacancies, companies, and applications.</p>
+            </div>
+            <a asp-controller="Admin" asp-action="Users" class="btn btn-primary">Manage users</a>
+        </div>
+
+        <div class="grid grid-4 mb-3">
+            <div class="card stat-card"><span class="stat-icon">&#128100;</span><div><div class="stat-value">@d.TotalUsers</div><div class="stat-label">Users</div></div></div>
+            <div class="card stat-card"><span class="stat-icon navy">&#128205;</span><div><div class="stat-value">@d.TotalVacancies</div><div class="stat-label">Vacancies</div></div></div>
+            <div class="card stat-card"><span class="stat-icon navy">&#128188;</span><div><div class="stat-value">@d.TotalApplications</div><div class="stat-label">Applications</div></div></div>
+            <div class="card stat-card"><span class="stat-icon navy">&#127295;</span><div><div class="stat-value">@d.Companies</div><div class="stat-label">Companies</div></div></div>
+        </div>
+
+        <div class="grid grid-sidebar">
+            <div class="stack">
+                <div class="card">
+                    <div class="card-header"><h2 class="fw-700">Administration</h2></div>
+                    <div class="card-body stack-sm">
+                        <a asp-controller="Admin" asp-action="Users" class="btn btn-outline btn-block">Users & roles</a>
+                        <a asp-controller="Admin" asp-action="Vacancies" class="btn btn-outline btn-block">Moderate vacancies</a>
+                        <a asp-controller="Admin" asp-action="Companies" class="btn btn-outline btn-block">Companies</a>
+                        <a asp-controller="Admin" asp-action="Applications" class="btn btn-outline btn-block">Applications</a>
+                        <a asp-controller="Admin" asp-action="Reports" class="btn btn-outline btn-block">Reports</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h2 class="fw-700">Vacancy moderation queue</h2></div>
+                    <div class="card-body">
+                        @if (d.RecentPendingVacancies.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No vacancies are awaiting review.</p>
+                        }
+                        else
+                        {
+                            @foreach (var vacancy in d.RecentPendingVacancies.Take(5))
+                            {
+                                <div class="border-bottom py-2 last-border-0">
+                                    <div class="fw-700">@vacancy.Title</div>
+                                    <div class="text-sm text-muted">@vacancy.CompanyName · @vacancy.Status</div>
+                                    <a asp-controller="Admin" asp-action="ReviewVacancy" asp-route-id="@vacancy.Id" class="btn btn-outline btn-sm mt-2">Review</a>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="stack">
+                <div class="card">
+                    <div class="card-header"><h2 class="fw-700">Role composition</h2></div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between"><span>Job seekers</span><strong>@d.JobSeekers</strong></div>
+                        <div class="d-flex justify-content-between"><span>Employers</span><strong>@d.Employers</strong></div>
+                        <div class="d-flex justify-content-between"><span>Administrators</span><strong>@d.Administrators</strong></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h2 class="fw-700">Recent registrations</h2></div>
+                    <div class="card-body">
+                        @if (d.RecentRegistrations.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No recent registrations.</p>
+                        }
+                        else
+                        {
+                            @foreach (var user in d.RecentRegistrations.Take(5))
+                            {
+                                <div class="border-bottom py-2 last-border-0">
+                                    <div class="fw-700">@user.FullName</div>
+                                    <div class="text-sm text-muted">@user.Role · @user.Email</div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

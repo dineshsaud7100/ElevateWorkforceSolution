@@ -1,0 +1,49 @@
+@model JobCardDto
+@inject ICurrentUserService CurrentUser
+<article class="card card-hover job-card">
+    <div class="job-card-body">
+        <div class="job-card-top">
+            @await Html.PartialAsync("_CompanyLogo", (object)Model.CompanyName)
+            <div class="flex-1">
+                <h3>
+                    <a asp-controller="Jobs" asp-action="Details" asp-route-id="@Model.Id">@Model.Title</a>
+                </h3>
+                <p class="text-sm text-muted mb-0">@Model.CompanyName</p>
+            </div>
+        </div>
+
+        <div class="job-meta">
+            @if (!string.IsNullOrWhiteSpace(Model.WorkLocation))
+            {
+                <span><span aria-hidden="true">&#128205;</span> @Model.WorkLocation</span>
+            }
+            <span><span aria-hidden="true">&#128188;</span> @Model.JobType.Display()</span>
+            <span><span aria-hidden="true">&#127970;</span> @Model.WorkArrangement.Display()</span>
+            <span><span aria-hidden="true">&#128200;</span> @Model.ExperienceLevel.Display()</span>
+        </div>
+
+        @if (Model.Skills.Count > 0)
+        {
+            <ul class="tag-list mb-2">
+                @foreach (var skill in Model.Skills.Take(4))
+                {
+                    <li><span class="chip">@skill</span></li>
+                }
+                @if (Model.Skills.Count > 4)
+                {
+                    <li><span class="chip">+@(Model.Skills.Count - 4) more</span></li>
+                }
+            </ul>
+        }
+    </div>
+
+    <div class="job-card-foot">
+        <span>
+            <span class="badge @Model.Status.CssClass()">@Model.Status.Display()</span>
+        </span>
+        <span>@Model.PostedDate.TimeAgo()</span>
+        <span class="ms-auto">
+            <a asp-controller="Jobs" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline btn-sm">View role</a>
+        </span>
+    </div>
+</article>

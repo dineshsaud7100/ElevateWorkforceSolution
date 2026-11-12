@@ -1,0 +1,79 @@
+@model SkillsFormViewModel
+@{
+    ViewData["Title"] = "Skills";
+}
+
+<div class="page">
+    <div class="container" style="max-width:760px">
+        <div class="page-header">
+            <h1>Skills</h1>
+            <p>
+                Add the skills you have. They are compared with the requirements of every vacancy,
+                which is what produces the match score on a job page.
+            </p>
+        </div>
+
+        <div class="card card-pad mb-3">
+            <form asp-controller="Candidate" asp-action="AddSkills" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="JobSeekerId" />
+                <div class="field">
+                    <label for="NewSkills" class="form-label">Add skills</label>
+                    <input id="NewSkills" asp-for="NewSkills" class="form-control"
+                           placeholder="e.g. C#, ASP.NET Core, PostgreSQL" />
+                    <span class="form-text">Separate each skill with a comma. Duplicates are ignored.</span>
+                </div>
+                <button type="submit" class="btn btn-primary">Add skills</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="fw-700">Your skills (@Model.Skills.Count)</h2>
+                <a asp-controller="Candidate" asp-action="Profile" class="btn btn-outline btn-sm">Back to profile</a>
+            </div>
+            <div class="card-body">
+                @if (Model.Skills.Count == 0)
+                {
+                    <p class="text-muted mb-0">You have not added any skills yet.</p>
+                }
+                else
+                {
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Skill</th>
+                                    <th scope="col">Proficiency</th>
+                                    <th scope="col">Experience</th>
+                                    <th scope="col"><span class="sr-only">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in Model.Skills)
+                                {
+                                    <tr>
+                                        <td class="fw-700">@s.Name</td>
+                                        <td><span class="chip">@s.Proficiency</span></td>
+                                        <td class="text-sm text-muted">@(s.YearsOfExperience?.ToString("0.#") ?? "-")</td>
+                                        <td class="table-actions text-end">
+                                            <form asp-controller="Candidate" asp-action="RemoveSkill" method="post"
+                                                  data-confirm="Remove this skill from your profile?">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@s.Id" />
+                                                <input type="hidden" name="jobSeekerId" value="@Model.JobSeekerId" />
+                                                <button type="submit" class="btn btn-outline btn-sm" aria-label="Remove @s.Name">
+                                                    Remove
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

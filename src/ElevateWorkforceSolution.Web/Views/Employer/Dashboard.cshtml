@@ -1,0 +1,90 @@
+@model EmployerDashboardViewModel
+@{
+    var d = Model.Dashboard;
+    ViewData["Title"] = "Employer dashboard";
+}
+
+<div class="page">
+    <div class="container">
+        <div class="page-header-row mb-3">
+            <div>
+                <h1>Employer dashboard</h1>
+                <p class="mb-0">Welcome back, @d.CompanyName.</p>
+            </div>
+            <div class="row">
+                <a asp-controller="Employer" asp-action="CreateVacancy" class="btn btn-primary">Post a vacancy</a>
+                <a asp-controller="Employer" asp-action="Company" class="btn btn-outline">Company profile</a>
+            </div>
+        </div>
+
+        <div class="grid grid-4 mb-3">
+            <div class="card stat-card"><span class="stat-icon">&#128188;</span><div><div class="stat-value">@d.ActiveVacancies</div><div class="stat-label">Active vacancies</div></div></div>
+            <div class="card stat-card"><span class="stat-icon navy">&#128205;</span><div><div class="stat-value">@d.TotalApplications</div><div class="stat-label">Applications</div></div></div>
+            <div class="card stat-card"><span class="stat-icon navy">&#11088;</span><div><div class="stat-value">@d.ShortlistedCandidates</div><div class="stat-label">Shortlisted</div></div></div>
+            <div class="card stat-card"><span class="stat-icon navy">&#128203;</span><div><div class="stat-value">@d.UnreadNotifications</div><div class="stat-label">Unread updates</div></div></div>
+        </div>
+
+        <div class="grid grid-sidebar">
+            <div class="stack">
+                <div class="card">
+                    <div class="card-header"><h2 class="fw-700">Vacancy pipeline</h2></div>
+                    <div class="card-body stack-sm">
+                        <a asp-controller="Employer" asp-action="Vacancies" class="btn btn-outline btn-block">Manage vacancies</a>
+                        <a asp-controller="Employer" asp-action="Applicants" class="btn btn-outline btn-block">Review applicants</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h2 class="fw-700">Recent vacancies</h2></div>
+                    <div class="card-body">
+                        @if (d.RecentVacancies.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No vacancies have been created yet.</p>
+                        }
+                        else
+                        {
+                            <div class="stack-sm">
+                                @foreach (var vacancy in d.RecentVacancies.Take(5))
+                                {
+                                    <div class="d-flex justify-content-between gap-3">
+                                        <div><div class="fw-700">@vacancy.Title</div><div class="text-sm text-muted">@vacancy.Status</div></div>
+                                        <a asp-controller="Employer" asp-action="EditVacancy" asp-route-id="@vacancy.Id" class="btn btn-outline btn-sm">Edit</a>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="stack">
+                <div class="section-head row-between">
+                    <h2>Recent applications</h2>
+                    <a asp-controller="Employer" asp-action="Applicants" class="btn btn-outline btn-sm">View all</a>
+                </div>
+                @if (d.RecentApplications.Count == 0)
+                {
+                    <div class="card"><div class="card-body text-muted">No applications have arrived yet.</div></div>
+                }
+                else
+                {
+                    <div class="card table-wrap">
+                        <table class="table">
+                            <thead><tr><th>Candidate</th><th>Role</th><th>Status</th></tr></thead>
+                            <tbody>
+                                @foreach (var application in d.RecentApplications.Take(5))
+                                {
+                                    <tr>
+                                        <td><a asp-controller="Employer" asp-action="Applicants" class="fw-700">@application.CandidateName</a></td>
+                                        <td>@application.JobTitle</td>
+                                        <td><span class="badge @application.Status.CssClass()">@application.StatusLabel</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

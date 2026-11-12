@@ -1,0 +1,95 @@
+@model ResumeListViewModel
+@{
+    ViewData["Title"] = "My resumes";
+}
+
+<div class="page">
+    <div class="container" style="max-width:820px">
+        <div class="page-header">
+            <h1>My resumes</h1>
+            <p>
+                Upload one or more resumes. When you apply to a vacancy you choose which one to send.
+                Files are private and only shared with the employer you apply to.
+            </p>
+        </div>
+
+        <div class="card card-pad mb-3">
+            <form asp-controller="Candidate" asp-action="UploadResume" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="jobSeekerId" value="@Model.JobSeekerId" />
+
+                <div class="field-row field-row-2">
+                    <div class="field">
+                        <label for="file" class="form-label">Resume file</label>
+                        <input type="file" id="file" name="file" class="form-control" accept=".pdf,.doc,.docx" required />
+                        <span class="form-text">PDF, DOC or DOCX. Maximum 5 MB.</span>
+                    </div>
+                    <div class="field">
+                        <label for="label" class="form-label">Label (optional)</label>
+                        <input type="text" id="label" name="label" class="form-control" placeholder="e.g. Primary CV" maxlength="100" />
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Upload resume</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="fw-700">Uploaded resumes (@Model.Resumes.Count)</h2>
+                <a asp-controller="Candidate" asp-action="Profile" class="btn btn-outline btn-sm">Back to profile</a>
+            </div>
+
+            @if (Model.Resumes.Count == 0)
+            {
+                var emptyState = ("&#128196;", "No resumes uploaded yet", "Upload a CV so you can apply to vacancies. You need at least one resume before you can apply.", (string?)null, (string?)null);
+                <div class="card">
+                    @await Html.PartialAsync("_EmptyState", emptyState, new ViewDataDictionary(ViewData))
+                </div>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">File</th>
+                                <th scope="col">Label</th>
+                                <th scope="col">Size</th>
+                                <th scope="col">Uploaded</th>
+                                <th scope="col"><span class="sr-only">Actions</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.Resumes)
+                            {
+                                <tr>
+                                    <td class="fw-700 break-words">@r.OriginalFileName</td>
+                                    <td>@(r.Label ?? "-")</td>
+                                    <td class="text-sm text-muted">@r.FileSizeBytes.FormatBytes()</td>
+                                    <td class="text-sm text-muted">@r.UploadedDate.ToString("dd MMM yyyy")</td>
+                                    <td class="table-actions text-end">
+                                        <div class="row" style="gap:.35rem;flex-wrap:nowrap">
+                                            <a asp-controller="Resume" asp-action="Download" asp-route-id="@r.Id" class="btn btn-outline btn-sm">
+                                                Download
+                                            </a>
+                                            <form asp-controller="Candidate" asp-action="DeleteResume" method="post"
+                                                  data-confirm="Delete this resume? This cannot be undone.">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@r.Id" />
+                                                <input type="hidden" name="jobSeekerId" value="@Model.JobSeekerId" />
+                                                <button type="submit" class="btn btn-danger btn-sm" aria-label="Delete @r.OriginalFileName">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

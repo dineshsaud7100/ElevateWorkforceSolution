@@ -1,0 +1,292 @@
+@model CandidateProfileViewModel
+@{
+    var p = Model.Profile;
+    var id = p.JobSeekerId;
+    ViewData["Title"] = "My profile";
+}
+
+<div class="page">
+    <div class="container">
+        <div class="page-header-row">
+            <div>
+                <h1>My profile</h1>
+                <p class="mb-0">This is what an employer sees when they open your application.</p>
+            </div>
+            <div class="row">
+                <a asp-controller="Candidate" asp-action="Resumes" asp-route-jobSeekerId="@id" class="btn btn-outline">Resumes</a>
+                <a asp-controller="Candidate" asp-action="Skills" asp-route-jobSeekerId="@id" class="btn btn-outline">Skills</a>
+            </div>
+        </div>
+
+        <div class="card card-pad mb-3">
+            <div class="row-between mb-2">
+                <div>
+                    <h2 class="mb-1" style="font-size:1.1rem">Profile @Model.Completion.Percentage% complete</h2>
+                    <p class="text-sm text-muted mb-0">Fill in the sections below to raise this score.</p>
+                </div>
+                <span class="badge badge-teal" style="font-size:.9rem">@Model.Completion.Percentage%</span>
+            </div>
+            <div class="progress mb-3" role="progressbar" aria-valuenow="@Model.Completion.Percentage" aria-valuemin="0" aria-valuemax="100"
+                 aria-label="Profile completion">
+                <div class="progress-bar @(Model.Completion.Percentage < 50 ? "warn" : null)"
+                     data-meter-fill="@Model.Completion.Percentage"></div>
+            </div>
+            <div class="grid grid-3">
+                @foreach (var completionSection in Model.Completion.Sections)
+                {
+                    <div class="row" style="gap:.4rem">
+                        <span class="badge @(completionSection.IsComplete ? "badge-success" : "badge-warning")">
+                            @(completionSection.IsComplete ? "&#10003;" : "&#33;")
+                        </span>
+                        <div>
+                            <p class="fw-700 mb-0" style="font-size:.9rem">@completionSection.Label</p>
+                            @if (!completionSection.IsComplete && !string.IsNullOrWhiteSpace(completionSection.Hint))
+                            {
+                                <p class="text-xs text-muted mb-0">@completionSection.Hint</p>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="grid grid-sidebar">
+            <div class="stack">
+                <div class="card">
+                    <div class="card-header"><h2 class="fw-700" style="font-size:1rem">Profile summary</h2></div>
+                    <div class="card-body">
+                        <dl class="detail-list">
+                            <div><dt>Name</dt><dd>@p.FullName</dd></div>
+                            <div><dt>Email</dt><dd class="break-words">@p.Email</dd></div>
+                            <div><dt>Phone</dt><dd>@(p.Phone ?? "-")</dd></div>
+                            <div><dt>Location</dt><dd>@(p.Location ?? "-")</dd></div>
+                            <div><dt>Title</dt><dd>@(p.ProfessionalTitle ?? "-")</dd></div>
+                            <div><dt>Experience</dt><dd>@(p.YearsOfExperience?.ToString("0.#") ?? "-") yrs</dd></div>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h2 class="fw-700" style="font-size:1rem">Sections</h2></div>
+                    <div class="card-body stack-sm">
+                        <a href="#basics" class="btn btn-outline btn-block btn-sm">Basics</a>
+                        <a href="#experience" class="btn btn-outline btn-block btn-sm">Experience (@p.Experiences.Count)</a>
+                        <a href="#education" class="btn btn-outline btn-block btn-sm">Education (@p.Educations.Count)</a>
+                        <a href="#skills" class="btn btn-outline btn-block btn-sm">Skills (@p.Skills.Count)</a>
+                        <a href="#certifications" class="btn btn-outline btn-block btn-sm">Certifications (@p.Certifications.Count)</a>
+                        <a href="#languages" class="btn btn-outline btn-block btn-sm">Languages (@p.Languages.Count)</a>
+                        <a asp-controller="Candidate" asp-action="Resumes" asp-route-jobSeekerId="@id" class="btn btn-outline btn-block btn-sm">
+                            Resumes (@(p.HasResume ? 1 : 0))
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stack">
+                <div class="card" id="basics">
+                    <div class="card-header">
+                        <h2 class="fw-700">About you</h2>
+                    </div>
+                    <div class="card-body">
+                        <form asp-controller="Candidate" asp-action="UpdateBasics" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="jobSeekerId" value="@id" />
+
+                            <div class="field-row field-row-2">
+                                <div class="field">
+                                    <label asp-for="Basics.ProfessionalTitle" class="form-label">Professional title</label>
+                                    <input asp-for="Basics.ProfessionalTitle" class="form-control" placeholder="e.g. Junior Web Developer" />
+                                </div>
+                                <div class="field">
+                                    <label asp-for="Basics.Location" class="form-label">Location</label>
+                                    <input asp-for="Basics.Location" class="form-control" placeholder="e.g. Kathmandu" />
+                                </div>
+                            </div>
+
+                            <div class="field-row field-row-2">
+                                <div class="field">
+                                    <label asp-for="Basics.Phone" class="form-label">Phone</label>
+                                    <input asp-for="Basics.Phone" class="form-control" placeholder="+977 98XXXXXXXX" />
+                                </div>
+                                <div class="field">
+                                    <label asp-for="Basics.YearsOfExperience" class="form-label">Years of experience</label>
+                                    <input asp-for="Basics.YearsOfExperience" class="form-control" type="number" step="0.5" min="0" max="60" />
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label asp-for="Basics.About" class="form-label">About you</label>
+                                <textarea asp-for="Basics.About" class="form-control" rows="4"
+                                          placeholder="A short summary of who you are and what you are looking for."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Save basics</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card" id="experience">
+                    <div class="card-header">
+                        <h2 class="fw-700">Work experience</h2>
+                        <a asp-controller="Candidate" asp-action="AddExperience" asp-route-jobSeekerId="@id" class="btn btn-outline btn-sm">Add</a>
+                    </div>
+                    <div class="card-body">
+                        @if (p.Experiences.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No work experience added yet. Employers like to see where you have worked.</p>
+                        }
+                        else
+                        {
+                            <div class="stack">
+                                @foreach (var e in p.Experiences)
+                                {
+                                    <div class="row-between" style="align-items:flex-start">
+                                        <div>
+                                            <p class="fw-700 mb-0">@e.Position</p>
+                                            <p class="text-sm text-muted mb-0">@e.CompanyName@(e.Location is null ? "" : " &middot; ".ToString() + e.Location)</p>
+                                            <p class="text-xs text-subtle mb-0">
+                                                @e.StartDate.ToString("MMM yyyy") &ndash;
+                                                @(e.IsCurrent ? "Present" : e.EndDate?.ToString("MMM yyyy"))
+                                            </p>
+                                            @if (!string.IsNullOrWhiteSpace(e.Description))
+                                            {
+                                                <p class="text-sm text-muted mt-1 mb-0">@e.Description</p>
+                                            }
+                                        </div>
+                                        <form asp-controller="Candidate" asp-action="RemoveExperience" method="post"
+                                              data-confirm="Remove this experience entry?">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@e.Id" />
+                                            <input type="hidden" name="jobSeekerId" value="@id" />
+                                            <button type="submit" class="btn btn-outline btn-sm" aria-label="Remove @e.Position at @e.CompanyName">
+                                                Remove
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card" id="education">
+                    <div class="card-header">
+                        <h2 class="fw-700">Education</h2>
+                        <a asp-controller="Candidate" asp-action="AddEducation" asp-route-jobSeekerId="@id" class="btn btn-outline btn-sm">Add</a>
+                    </div>
+                    <div class="card-body">
+                        @if (p.Educations.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No education entries yet.</p>
+                        }
+                        else
+                        {
+                            <div class="stack">
+                                @foreach (var e in p.Educations)
+                                {
+                                    <div class="row-between" style="align-items:flex-start">
+                                        <div>
+                                            <p class="fw-700 mb-0">@e.Degree@(e.FieldOfStudy is null ? "" : " in " + e.FieldOfStudy)</p>
+                                            <p class="text-sm text-muted mb-0">
+                                                @e.Institution@(e.GraduationYear is null ? "" : " &middot; ".ToString() + e.GraduationYear)
+                                            </p>
+                                        </div>
+                                        <form asp-controller="Candidate" asp-action="RemoveEducation" method="post"
+                                              data-confirm="Remove this education entry?">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@e.Id" />
+                                            <input type="hidden" name="jobSeekerId" value="@id" />
+                                            <button type="submit" class="btn btn-outline btn-sm" aria-label="Remove @e.Degree at @e.Institution">
+                                                Remove
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card" id="skills">
+                    <div class="card-header">
+                        <h2 class="fw-700">Skills</h2>
+                        <a asp-controller="Candidate" asp-action="Skills" asp-route-jobSeekerId="@id" class="btn btn-outline btn-sm">Manage</a>
+                    </div>
+                    <div class="card-body">
+                        @if (p.Skills.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No skills added yet. These are matched against every vacancy you apply to.</p>
+                        }
+                        else
+                        {
+                            <ul class="tag-list">
+                                @foreach (var s in p.Skills)
+                                {
+                                    <li><span class="chip">@s.Name</span></li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+
+                <div class="card" id="certifications">
+                    <div class="card-header">
+                        <h2 class="fw-700">Certifications</h2>
+                        <a asp-controller="Candidate" asp-action="AddCertification" asp-route-jobSeekerId="@id" class="btn btn-outline btn-sm">Add</a>
+                    </div>
+                    <div class="card-body">
+                        @if (p.Certifications.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No certifications added yet.</p>
+                        }
+                        else
+                        {
+                            <div class="stack">
+                                @foreach (var c in p.Certifications)
+                                {
+                                    <div class="row-between" style="align-items:flex-start">
+                                        <div>
+                                            <p class="fw-700 mb-0">@c.Name</p>
+                                            <p class="text-sm text-muted mb-0">
+                                                @c.IssuingOrganization@(c.IssueDate is null ? "" : " &middot; ".ToString() + c.IssueDate.Value.ToString("MMM yyyy"))
+                                            </p>
+                                        </div>
+                                        <form asp-controller="Candidate" asp-action="RemoveCertification" method="post"
+                                              data-confirm="Remove this certification?">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@c.Id" />
+                                            <input type="hidden" name="jobSeekerId" value="@id" />
+                                            <button type="submit" class="btn btn-outline btn-sm" aria-label="Remove @c.Name">Remove</button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card" id="languages">
+                    <div class="card-header">
+                        <h2 class="fw-700">Languages</h2>
+                        <a asp-controller="Candidate" asp-action="AddLanguage" asp-route-jobSeekerId="@id" class="btn btn-outline btn-sm">Add</a>
+                    </div>
+                    <div class="card-body">
+                        @if (p.Languages.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No languages added yet. Nepali and English are expected on most profiles.</p>
+                        }
+                        else
+                        {
+                            <ul class="tag-list">
+                                @foreach (var l in p.Languages)
+                                {
+                                    <li><span class="chip">@l.Name &middot; @l.Proficiency</span></li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

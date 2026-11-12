@@ -1,0 +1,110 @@
+@model ApplyViewModel
+@{
+    var ctx = Model.Context;
+    var job = ctx.JobId;
+    ViewData["Title"] = "Apply - " + ctx.JobTitle;
+}
+
+<div class="page">
+    <div class="container" style="max-width:900px">
+        <nav aria-label="Breadcrumb" class="mb-3 text-sm">
+            <a asp-controller="Jobs" asp-action="Details" asp-route-id="@job">@ctx.JobTitle</a>
+            <span class="text-subtle" aria-hidden="true"> / </span>
+            <span class="text-muted">Apply</span>
+        </nav>
+
+        <div class="page-header">
+            <h1>Apply for @ctx.JobTitle</h1>
+            <p>@ctx.CompanyName</p>
+        </div>
+
+        @if (!ctx.AcceptsApplications)
+        {
+            <div class="alert alert-warning">
+                <span aria-hidden="true">&#9888;</span>
+                <span>@(ctx.BlockedReason ?? "This vacancy is not accepting applications.")</span>
+            </div>
+        }
+        else if (ctx.HasApplied)
+        {
+            <div class="alert alert-info">
+                <span aria-hidden="true">&#8505;</span>
+                <span>You have already applied to this vacancy. You can only apply once per vacancy.</span>
+            </div>
+        }
+        else if (!ctx.HasResume)
+        {
+            <div class="alert alert-warning">
+                <span aria-hidden="true">&#9888;</span>
+                <div>
+                    <span>You need to upload a resume before you can apply.</span>
+                    <div class="mt-1">
+                        <a asp-controller="Candidate" asp-action="Resumes" class="btn btn-outline btn-sm">Upload a resume</a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="grid grid-sidebar">
+            <div class="stack">
+                @if (ctx.Match is not null)
+                {
+                    @await Html.PartialAsync("_MatchBreakdown", ctx.Match)
+                }
+                else
+                {
+                    <div class="card card-pad">
+                        <p class="text-muted mb-0">
+                            Add more detail to your profile and this page will show how your skills,
+                            experience and location compare with the requirements of this vacancy.
+                        </p>
+                    </div>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h2 class="fw-700">Your application</h2></div>
+                <div class="card-body">
+                    @if (!ctx.AcceptsApplications || ctx.HasApplied || !ctx.HasResume)
+                    {
+                        <a asp-controller="Jobs" asp-action="Details" asp-route-id="@job" class="btn btn-outline btn-block">
+                            Back to the vacancy
+                        </a>
+                    }
+                    else
+                    {
+                        <form asp-controller="Applications" asp-action="Apply" method="post" novalidate>
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="JobId" />
+                            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+                            <div class="field">
+                                <label asp-for="ResumeId" class="form-label"></label>
+                                <select asp-for="ResumeId" asp-items="Model.ResumeOptions" class="form-select"></select>
+                                <span class="form-text">
+                                    Only this file is shared with @ctx.CompanyName.
+                                    <a asp-controller="Candidate" asp-action="Resumes">Manage resumes</a>
+                                </span>
+                                <span asp-validation-for="ResumeId" class="field-validation-error"></span>
+                            </div>
+
+                            <div class="field">
+                                <label asp-for="CoverLetter" class="form-label"></label>
+                                <textarea asp-for="CoverLetter" class="form-control" rows="7"
+                                          placeholder="Optional. A short note about why you are a good fit for this role."></textarea>
+                                <span class="form-text">Keep it to a few sentences. Hiring managers read a lot of these.</span>
+                            </div>
+
+                            <div class="form-alert form-alert-info">
+                                The employer will be able to see your name, contact details, profile and
+                                the resume you selected. They cannot see applications you sent to other employers.
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block btn-lg">Submit application</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

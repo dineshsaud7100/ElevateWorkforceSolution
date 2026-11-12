@@ -1,0 +1,24 @@
+@model ErrorViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="page">
+    <div class="container">
+        <div class="card card-pad text-center" style="max-width:640px;margin-inline:auto">
+            <p class="fw-800" style="font-size:3.5rem;line-height:1;color:var(--teal-600);margin-bottom:.5rem">
+                @(Model.StatusCode > 0 ? Model.StatusCode : 500)
+            </p>
+            <h1 class="mb-2">@Model.Title</h1>
+            <p class="text-muted mb-3">@Model.Message</p>
+            @if (!string.IsNullOrWhiteSpace(Model.RequestId))
+            {
+                <p class="text-xs text-subtle">Reference: @Model.RequestId</p>
+            }
+            <div class="row" style="justify-content:center;margin-top:1.5rem">
+                <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Back to home</a>
+                <a asp-controller="Jobs" asp-action="Index" class="btn btn-outline">Browse jobs</a>
+            </div>
+        </div>
+    </div>
+</div>

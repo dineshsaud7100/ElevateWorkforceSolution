@@ -1,0 +1,226 @@
+@inject ICurrentUserService CurrentUser
+@inject INotificationService Notifications
+@{
+    var path = ViewContext.HttpContext.Request.Path.Value ?? string.Empty;
+    bool IsActive(string controller, string? action = null) =>
+        path.StartsWith("/" + controller, StringComparison.OrdinalIgnoreCase)
+        && (action is null || path.Equals("/" + controller + "/" + action, StringComparison.OrdinalIgnoreCase));
+
+    var unreadCount = 0;
+    if (CurrentUser.IsAuthenticated && !string.IsNullOrEmpty(CurrentUser.UserId))
+    {
+        try
+        {
+            unreadCount = await Notifications.GetUnreadCountAsync(CurrentUser.UserId!);
+        }
+        catch
+        {
+            // Never let a notification counter failure break the page shell.
+        }
+    }
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Elevate Workforce</title>
+    <meta name="description" content="@ViewData["Description"]" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <script>
+        // Set before paint so scroll-reveal content never flashes in and out.
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.documentElement.classList.add('js-anim');
+        }
+    </script>
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <header class="site-header no-print">
+        <div class="container">
+            <a class="brand" asp-controller="Home" asp-action="Index" aria-label="Elevate Workforce Solution home">
+                <span class="brand-text">Elevate Workforce Solution</span>
+            </a>
+
+            <nav class="main-nav" aria-label="Primary">
+                <a asp-controller="Jobs" asp-action="Index" class="@(IsActive("Jobs") ? "active" : null)">Find jobs</a>
+                <a asp-controller="Companies" asp-action="Index" class="@(IsActive("Companies") ? "active" : null)">Companies</a>
+
+                @if (CurrentUser.IsAdministrator)
+                {
+                    <a asp-controller="Admin" asp-action="Index" class="@(IsActive("Admin") ? "active" : null)">Admin</a>
+                    <a asp-controller="Admin" asp-action="Vacancies">Moderation</a>
+                    <a asp-controller="Admin" asp-action="Reports">Reports</a>
+                }
+                else if (CurrentUser.IsEmployer)
+                {
+                    <a asp-controller="Employer" asp-action="Dashboard" class="@(IsActive("Employer", "Dashboard") ? "active" : null)">Dashboard</a>
+                    <a asp-controller="Employer" asp-action="Vacancies">Vacancies</a>
+                    <a asp-controller="Employer" asp-action="Applicants">Applicants</a>
+                    <a asp-controller="Employer" asp-action="Company">Company</a>
+                }
+                else if (CurrentUser.IsJobSeeker)
+                {
+                    <a asp-controller="Candidate" asp-action="Dashboard" class="@(IsActive("Candidate", "Dashboard") ? "active" : null)">Dashboard</a>
+                    <a asp-controller="Applications" asp-action="MyApplications" class="@(IsActive("Applications", "MyApplications") ? "active" : null)">My applications</a>
+                    <a asp-controller="Candidate" asp-action="Profile">Profile</a>
+                    <a asp-controller="Applications" asp-action="SavedJobs">Saved</a>
+                }
+
+                @if (CurrentUser.IsAuthenticated)
+                {
+                    <span class="nav-divider" aria-hidden="true"></span>
+                    <a asp-controller="Notifications" asp-action="Index" class="icon-btn" title="Notifications">
+                        <span aria-hidden="true">&#9993;</span>
+                        <span class="sr-only">Notifications</span>
+                        @if (unreadCount > 0)
+                        {
+                            <span class="badge-dot">@unreadCount</span>
+                        }
+                    </a>
+                    <a asp-controller="Account" asp-action="Profile" title="Account settings">
+                        <span aria-hidden="true">&#128100;</span>
+                        <span class="sr-only">Account settings</span>
+                    </a>
+                    <form asp-controller="Account" asp-action="Logout" method="post" style="display:inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-light-outline btn-sm">Sign out</button>
+                    </form>
+                }
+                else
+                {
+                    <span class="nav-divider" aria-hidden="true"></span>
+                    <a asp-controller="Account" asp-action="Login">Sign in</a>
+                    <a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-sm">Create account</a>
+                }
+            </nav>
+
+            <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="nav-drawer">
+                <span aria-hidden="true">&#9776;</span>
+                <span data-nav-label>Menu</span>
+            </button>
+        </div>
+
+        <div class="nav-drawer" id="nav-drawer">
+            <div class="container">
+                <a asp-controller="Jobs" asp-action="Index">Find jobs</a>
+                <a asp-controller="Companies" asp-action="Index">Companies</a>
+
+                @if (CurrentUser.IsAdministrator)
+                {
+                    <a asp-controller="Admin" asp-action="Index">Admin dashboard</a>
+                    <a asp-controller="Admin" asp-action="Vacancies">Vacancy moderation</a>
+                    <a asp-controller="Admin" asp-action="Users">Users</a>
+                    <a asp-controller="Admin" asp-action="Reports">Reports</a>
+                }
+                else if (CurrentUser.IsEmployer)
+                {
+                    <a asp-controller="Employer" asp-action="Dashboard">Dashboard</a>
+                    <a asp-controller="Employer" asp-action="Vacancies">My vacancies</a>
+                    <a asp-controller="Employer" asp-action="CreateVacancy">Post a vacancy</a>
+                    <a asp-controller="Employer" asp-action="Applicants">Applicants</a>
+                    <a asp-controller="Employer" asp-action="Company">Company profile</a>
+                }
+                else if (CurrentUser.IsJobSeeker)
+                {
+                    <a asp-controller="Candidate" asp-action="Dashboard">Dashboard</a>
+                    <a asp-controller="Applications" asp-action="MyApplications">My applications</a>
+                    <a asp-controller="Applications" asp-action="SavedJobs">Saved jobs</a>
+                    <a asp-controller="Candidate" asp-action="Profile">My profile</a>
+                    <a asp-controller="Candidate" asp-action="Resumes">Resumes</a>
+                    <a asp-controller="Candidate" asp-action="Recommendations">Recommended jobs</a>
+                }
+
+                @if (CurrentUser.IsAuthenticated)
+                {
+                    <a asp-controller="Notifications" asp-action="Index">Notifications@(unreadCount > 0 ? $" ({unreadCount} unread)" : "")</a>
+                    <a asp-controller="Account" asp-action="Profile">Account settings</a>
+                    <div class="row">
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="w-100">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-light-outline btn-block">Sign out</button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <div class="row">
+                        <a asp-controller="Account" asp-action="Login" class="btn btn-light-outline flex-1">Sign in</a>
+                        <a asp-controller="Account" asp-action="Register" class="btn btn-primary flex-1">Create account</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </header>
+
+    <main id="main" role="main">
+        <div class="container">
+            @if (TempData["Success"] is string success)
+            {
+                <div class="alert alert-success mt-3" role="status">
+                    <span aria-hidden="true">&#10003;</span>
+                    <span>@success</span>
+                </div>
+            }
+            @if (TempData["Error"] is string error)
+            {
+                <div class="alert alert-error mt-3" role="alert">
+                    <span aria-hidden="true">&#33;</span>
+                    <span>@error</span>
+                </div>
+            }
+        </div>
+
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer no-print">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <a class="brand" asp-controller="Home" asp-action="Index">
+                        <span class="brand-text">Elevate Workforce Solution</span>
+                    </a>
+                    <p class="text-sm mt-2">A recruitment platform connecting Nepali employers with verified talent.</p>
+                </div>
+                <div>
+                    <h4>Candidates</h4>
+                    <ul class="footer-links">
+                        <li><a asp-controller="Jobs" asp-action="Index">Browse vacancies</a></li>
+                        <li><a asp-controller="Companies" asp-action="Index">Companies hiring</a></li>
+                        <li><a asp-controller="Account" asp-action="Register">Create a profile</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Employers</h4>
+                    <ul class="footer-links">
+                        <li><a asp-controller="Account" asp-action="Register" asp-route-accountType="Employer">Post a vacancy</a></li>
+                        <li><a asp-controller="Employer" asp-action="Dashboard">Employer dashboard</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Platform</h4>
+                    <ul class="footer-links">
+                        <li><a asp-controller="Home" asp-action="Privacy">Privacy</a></li>
+                        <li><a asp-controller="Home" asp-action="Index">About</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>&copy; @DateTime.UtcNow.Year Elevate Workforce Solution</span>
+                <span>Built for Nepal</span>
+            </div>
+        </div>
+    </footer>
+
+    @* GSAP is vendored locally so the site does not depend on a third-party CDN at runtime. *@
+    <script src="~/js/vendor/gsap.min.js"
+            integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt"
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

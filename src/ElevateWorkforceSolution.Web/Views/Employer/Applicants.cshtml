@@ -1,0 +1,10 @@
+@model ApplicantsViewModel
+@{
+    ViewData["Title"] = "Applicants";
+}
+
+<div class="page"><div class="container"><div class="page-header-row"><div><h1>Applicants</h1><p class="mb-0">Review candidates and move applications through the hiring pipeline.</p></div></div>
+<form method="get" asp-action="Applicants" class="row g-2 mb-3"><div class="col-md-3"><select asp-for="JobId" asp-items="Model.JobOptions" class="form-select"><option value="">All vacancies</option></select></div><div class="col-md-3"><select asp-for="Status" asp-items="Model.StatusOptions" class="form-select"></select></div><div class="col-md-4"><input asp-for="Keyword" class="form-control" placeholder="Candidate or job" /></div><div class="col-md-2"><button class="btn btn-outline w-100" type="submit">Filter</button></div></form>
+@if (Model.Results.Items.Count == 0) { <div class="card"><div class="card-body text-muted">No applicants match these filters.</div></div> }
+else { <div class="card table-wrap"><table class="table"><thead><tr><th>Candidate</th><th>Role</th><th>Location</th><th>Status</th><th>Applied</th><th></th></tr></thead><tbody>@foreach(var a in Model.Results.Items){<tr><td><strong>@a.CandidateName</strong><div class="text-sm text-muted">@a.CandidateEmail</div></td><td>@a.JobTitle</td><td>@a.CandidateLocation</td><td><span class="badge @a.Status.CssClass()">@a.StatusLabel</span></td><td>@a.AppliedDate.ToString("dd MMM yyyy")</td><td><a asp-action="ApplicantDetails" asp-route-id="@a.ApplicationId" class="btn btn-outline btn-sm">Review</a></td></tr>}</tbody></table></div> }
+</div></div>

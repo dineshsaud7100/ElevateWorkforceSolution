@@ -1,0 +1,95 @@
+@model CompanyListViewModel
+@{
+    ViewData["Title"] = "Companies hiring in Nepal";
+    var query = Context.Request.Query;
+    var baseUrl = "/Companies?" + string.Join('&',
+        query.Where(q => !string.Equals(q.Key, "page", StringComparison.OrdinalIgnoreCase))
+             .Select(q => $"{q.Key}={Uri.EscapeDataString(q.Value.ToString())}")) + "&";
+    var pager = Model.Results.ToPager(baseUrl);
+}
+
+<div class="page">
+    <div class="container">
+        <div class="page-header">
+            <h1>Companies hiring in Nepal</h1>
+            <p>Browse employers that have live vacancies on the platform.</p>
+        </div>
+
+        <form asp-controller="Companies" asp-action="Index" method="get" class="filter-bar" style="grid-template-columns:2fr 1fr auto">
+            <input type="hidden" name="page" value="1" />
+            <div class="field">
+                <label for="keyword" class="form-label">Search</label>
+                <input type="search" id="keyword" name="keyword" value="@Model.Keyword" class="form-control" placeholder="Company name" />
+            </div>
+            <div class="field">
+                <label for="industry" class="form-label">Industry</label>
+                <select id="industry" name="industry" class="form-select">
+                    <option value="">All industries</option>
+                    @foreach (var option in Model.Industries)
+                    {
+                        var value = option;
+                        <option value="@value" selected="@(string.Equals(value, Model.Industry, StringComparison.OrdinalIgnoreCase))">@value</option>
+                    }
+                </select>
+            </div>
+            <div class="row">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a asp-controller="Companies" asp-action="Index" class="btn btn-outline">Reset</a>
+            </div>
+        </form>
+
+        <p class="text-muted mb-3">
+            <strong>@Model.Results.TotalCount</strong>
+            @(Model.Results.TotalCount == 1 ? "company" : "companies")
+        </p>
+
+        @if (!Model.Results.Items.Any())
+        {
+            var emptyState = ("&#127970;", "No companies match that search", "Try a different name, or clear the industry filter.", Url.Action("Index", "Companies"), "Clear filters");
+            <div class="card">
+                @await Html.PartialAsync("_EmptyState", emptyState, new ViewDataDictionary(ViewData))
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-3">
+                @foreach (var company in Model.Results.Items)
+                {
+                    <div class="card card-hover reveal">
+                        <div class="card-body">
+                            <div class="company-header mb-2">
+                                <span class="company-logo" aria-hidden="true">@company.Name.Initials()</span>
+                                <div>
+                                    <h3 class="mb-1" style="font-size:1.05rem">
+                                        <a asp-controller="Companies" asp-action="Details" asp-route-id="@company.Id" style="color:var(--navy-900)">
+                                            @company.Name
+                                        </a>
+                                    </h3>
+                                    <p class="text-sm text-muted mb-0">@(company.Industry ?? "Industry not stated")</p>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(company.Location))
+                            {
+                                <p class="text-sm text-muted">&#128205; @company.Location</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(company.Description))
+                            {
+                                <p class="text-sm text-muted">@company.Description</p>
+                            }
+                            <div class="row-between mt-3">
+                                <span class="badge badge-teal">
+                                    @company.ActiveVacancyCount open @(company.ActiveVacancyCount == 1 ? "role" : "roles")
+                                </span>
+                                <a asp-controller="Companies" asp-action="Details" asp-route-id="@company.Id" class="btn btn-outline btn-sm">
+                                    View profile
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @await Html.PartialAsync("_Pager", pager)
+        }
+    </div>
+</div>

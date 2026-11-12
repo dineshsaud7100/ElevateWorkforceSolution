@@ -1,0 +1,118 @@
+@model JobSearchViewModel
+@{
+    ViewData["Title"] = "Search vacancies";
+    var f = Model.Filter;
+    var query = Context.Request.Query;
+    var baseUrl = "/Jobs?" + string.Join('&',
+        query.Where(q => !string.Equals(q.Key, "page", StringComparison.OrdinalIgnoreCase))
+             .Select(q => $"{q.Key}={Uri.EscapeDataString(q.Value.ToString())}")) + "&";
+    var pager = Model.Results.ToPager(baseUrl);
+}
+
+<div class="page">
+    <div class="container">
+        <div class="page-header">
+            <h1>Search vacancies</h1>
+            <p>
+                Every vacancy listed here has been reviewed and approved by a platform administrator.
+                Narrow the list using the filters, or clear them to see everything currently open.
+            </p>
+        </div>
+
+        <form asp-controller="Jobs" asp-action="Index" method="get" class="filter-bar">
+            <input type="hidden" name="page" value="1" />
+
+            <div class="field field-grow">
+                <label for="keyword" class="form-label">Keyword</label>
+                <input type="search" id="keyword" name="keyword" value="@f.Keyword" class="form-control"
+                       placeholder="Job title, skill or company" />
+            </div>
+
+            <div class="field">
+                <label for="location" class="form-label">Location</label>
+                <select id="location" name="location" class="form-select" asp-items="Model.LocationOptions">
+                    <option value="">All locations</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="category" class="form-label">Category</label>
+                <select id="category" name="category" class="form-select" asp-items="Model.CategoryOptions">
+                    <option value="">All categories</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="jobType" class="form-label">Job type</label>
+                <select id="jobType" name="jobType" class="form-select" asp-items="Model.JobTypeOptions">
+                    <option value="">Any job type</option>
+                </select>
+            </div>
+
+            <div class="row">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a asp-controller="Jobs" asp-action="Index" class="btn btn-outline">Reset</a>
+            </div>
+
+            <details class="w-100" style="grid-column:1/-1">
+                <summary class="fw-700" style="cursor:pointer">More filters</summary>
+                <div class="field-row field-row-3 mt-2">
+                    <div class="field">
+                        <label for="workArrangement" class="form-label">Work arrangement</label>
+                        <select id="workArrangement" name="workArrangement" class="form-select" asp-items="Model.WorkArrangementOptions">
+                            <option value="">Any arrangement</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="experienceLevel" class="form-label">Experience level</label>
+                        <select id="experienceLevel" name="experienceLevel" class="form-select" asp-items="Model.ExperienceLevelOptions">
+                            <option value="">Any experience level</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="sort" class="form-label">Sort by</label>
+                        <select id="sort" name="sort" class="form-select" asp-items="Model.SortOptions"></select>
+                    </div>
+                    <div class="field">
+                        <label for="salaryMin" class="form-label">Minimum salary</label>
+                        <input type="number" step="1000" min="0" id="salaryMin" name="salaryMin" value="@f.SalaryMin" class="form-control" />
+                    </div>
+                    <div class="field">
+                        <label for="salaryMax" class="form-label">Maximum salary</label>
+                        <input type="number" step="1000" min="0" id="salaryMax" name="salaryMax" value="@f.SalaryMax" class="form-control" />
+                    </div>
+                </div>
+            </details>
+        </form>
+
+        <div class="row-between mb-3">
+            <p class="text-muted mb-0">
+                <strong>@Model.Results.TotalCount</strong>
+                @(Model.Results.TotalCount == 1 ? "vacancy" : "vacancies") found
+                @if (Model.Facets.TotalActiveVacancies > 0)
+                {
+                    <span class="text-subtle">out of @Model.Facets.TotalActiveVacancies active</span>
+                }
+            </p>
+        </div>
+
+        @if (!Model.Results.Items.Any())
+        {
+            var emptyState = ("&#128269;", "No vacancies match those filters", "Try removing a filter or widening the salary range. New vacancies are added every week.", Url.Action("Index", "Jobs"), "Clear all filters");
+            <div class="card">
+                @await Html.PartialAsync("_EmptyState", emptyState, new ViewDataDictionary(ViewData))
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-3">
+                @foreach (var job in Model.Results.Items)
+                {
+                    <div class="reveal">@await Html.PartialAsync("_JobCard", job)</div>
+                }
+            </div>
+
+            @await Html.PartialAsync("_Pager", pager)
+        }
+    </div>
+</div>

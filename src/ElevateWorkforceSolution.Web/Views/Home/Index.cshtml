@@ -1,0 +1,471 @@
+@model HomeViewModel
+@{
+    ViewData["Title"] = "Nepal's recruitment platform";
+    ViewData["Description"] = "Elevate Workforce connects Nepali employers with verified candidates. Search vacancies, apply online and track your application.";
+}
+
+<section class="hero" data-hero>
+    <div class="container hero-inner">
+        <div class="hero-copy">
+            <span class="hero-eyebrow" data-hero-item>Verified employers &middot; Reviewed vacancies</span>
+            <h1 data-hero-item>Move your career forward in Nepal</h1>
+            <p class="hero-lead" data-hero-item>
+                Elevate Workforce connects job seekers with employers hiring across Nepal through a
+                transparent, accountable recruitment process. Every vacancy is reviewed before it goes live.
+            </p>
+            <div class="row" data-hero-item>
+                <a asp-controller="Jobs" asp-action="Index" class="btn btn-primary btn-lg">Search vacancies</a>
+                <a asp-controller="Account" asp-action="Register" asp-route-accountType="Employer" class="btn btn-light-outline btn-lg">
+                    Post a vacancy
+                </a>
+            </div>
+
+            <div class="hero-stats" data-hero-item>
+                <div>
+                    <div class="hero-stat-value" data-count-to="@Model.TotalActiveVacancies">0</div>
+                    <div class="hero-stat-label">Active vacancies</div>
+                </div>
+                <div>
+                    <div class="hero-stat-value" data-count-to="@Model.TotalCompaniesHiring">0</div>
+                    <div class="hero-stat-label">Companies hiring</div>
+                </div>
+                <div>
+                    <div class="hero-stat-value" data-count-to="@Model.PopularCategories.Count">0</div>
+                    <div class="hero-stat-label">Job categories</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-visual" aria-label="Talent matching visual">
+            <canvas id="predictive-arc-canvas" aria-hidden="true"></canvas>
+
+            <div class="hero-floating-card" aria-live="polite">
+                <span class="hero-floating-kicker">Career matching</span>
+                <h3>Find roles that fit your goals</h3>
+                <p>Explore current vacancies, filter by location and skills, and track every application from one place.</p>
+                <a asp-controller="Jobs" asp-action="Index" class="hero-floating-link">Browse vacancies <span aria-hidden="true">&rarr;</span></a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+(() => {
+    const canvas = document.getElementById('predictive-arc-canvas');
+    if (!canvas) return;
+
+    const container = canvas.closest('.hero-visual');
+    if (!container) return;
+
+    const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false });
+    if (!gl) return;
+
+    const VERT_SRC = `
+        attribute vec2 a_pos;
+        void main() {
+          gl_Position = vec4(a_pos, 0.0, 1.0);
+        }
+    `;
+
+    const FRAG_SRC = `
+        precision highp float;
+        uniform vec2 uRes;
+        uniform float uTime, uDpr, uCell, uDot;
+        uniform float uPeak, uHeight, uThick, uFall;
+        uniform vec3 uBg, uBase, uAccent, uHigh;
+        uniform vec2 uMouse;
+        uniform float uMouseRadius, uMouseStrength;
+
+        void main() {
+          float cs = max(uCell, 2.0);
+          vec2 ci = floor(gl_FragCoord.xy / cs);
+          vec2 cc = (ci + 0.5) * cs;
+
+          float x = cc.x / uDpr;
+          float y = (uRes.y - cc.y) / uDpr;
+          float w = uRes.x / uDpr;
+          float h = uRes.y / uDpr;
+
+          float normX = (x - w * 0.5) / (w * 0.75);
+          float curveY = h * uPeak + normX * normX * (h * uHeight);
+
+          float mdx = x - uMouse.x;
+          float influence = uMouseStrength * exp(-(mdx * mdx) / (2.0 * uMouseRadius * uMouseRadius + 1.0));
+          curveY = mix(curveY, uMouse.y, influence);
+
+          float dist = abs(y - curveY);
+          float th = (120.0 + (1.0 - abs(normX)) * 80.0) * uThick;
+
+          vec3 col = uBg;
+          if (dist < th) {
+            float i = 1.0 - dist / th;
+            float waveX = sin(x * 0.015 + uTime);
+            float waveY = cos(y * 0.02 + uTime);
+            i = i * 0.8 + waveX * waveY * 0.2 * i;
+            i *= max(0.0, 1.0 - pow(abs(normX), uFall));
+
+            if (i > 0.02) {
+              float side = uDot * i * uDpr;
+              vec2 d = abs(gl_FragCoord.xy - cc);
+              float cov = 1.0 - smoothstep(side * 0.5 - 1.0, side * 0.5 + 1.0, max(d.x, d.y));
+
+              vec3 ink = mix(uBase, uAccent, clamp(pow(i, 1.15), 0.0, 1.0));
+              ink = mix(ink, uHigh, smoothstep(0.72, 1.0, i));
+              col = mix(uBg, ink, cov * clamp(i * 1.7, 0.0, 1.0));
+            }
+          }
+
+          gl_FragColor = vec4(col, 1.0);
+        }
+    `;
+
+    function compile(type, source) {
+      const shader = gl.createShader(type);
+      if (!shader) return null;
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('PredictiveArc shader error:', gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+      }
+      return shader;
+    }
+
+    function parseColor(input, fallback) {
+      if (!input) return fallback;
+      const str = String(input).trim();
+      if (str.startsWith('#')) {
+        let hex = str.slice(1);
+        if (hex.length === 3 || hex.length === 4) {
+          hex = hex.split('').map(ch => ch + ch).join('');
+        }
+        if (hex.length >= 6) {
+          const r = parseInt(hex.slice(0, 2), 16);
+          const g = parseInt(hex.slice(2, 4), 16);
+          const b = parseInt(hex.slice(4, 6), 16);
+          if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+            return [r / 255, g / 255, b / 255];
+          }
+        }
+        return fallback;
+      }
+
+      const matches = str.match(/[\d.]+/g);
+      if (matches && matches.length >= 3) {
+        return [
+          Math.min(255, parseFloat(matches[0])) / 255,
+          Math.min(255, parseFloat(matches[1])) / 255,
+          Math.min(255, parseFloat(matches[2])) / 255
+        ];
+      }
+
+      return fallback;
+    }
+
+    const vertex = compile(gl.VERTEX_SHADER, VERT_SRC);
+    const fragment = compile(gl.FRAGMENT_SHADER, FRAG_SRC);
+    if (!vertex || !fragment) return;
+
+    const program = gl.createProgram();
+    if (!program) return;
+    gl.attachShader(program, vertex);
+    gl.attachShader(program, fragment);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('PredictiveArc link error:', gl.getProgramInfoLog(program));
+      return;
+    }
+
+    gl.useProgram(program);
+
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+
+    const attr = gl.getAttribLocation(program, 'a_pos');
+    gl.enableVertexAttribArray(attr);
+    gl.vertexAttribPointer(attr, 2, gl.FLOAT, false, 0, 0);
+
+    const loc = {};
+    const uniform = (name) => {
+      if (!loc[name]) loc[name] = gl.getUniformLocation(program, name);
+      return loc[name];
+    };
+
+    const pointerState = { x: 0, y: 0, targetX: 0, targetY: 0, active: 0, targetActive: 0 };
+    const pointerMove = (event) => {
+      const rect = canvas.getBoundingClientRect();
+      pointerState.targetX = event.clientX - rect.left;
+      pointerState.targetY = rect.height - (event.clientY - rect.top);
+      pointerState.targetActive = 1;
+    };
+
+    const pointerLeave = () => {
+      pointerState.targetActive = 0;
+    };
+
+    container.addEventListener('pointermove', pointerMove);
+    container.addEventListener('pointerleave', pointerLeave);
+    container.addEventListener('pointercancel', pointerLeave);
+
+    let rafId = null;
+    let lastTime = performance.now();
+    let clock = 0;
+
+    const settings = {
+      background: '#081d33',
+      baseColor: '#0d7d8c',
+      accentColor: '#2bb5c2',
+      highlight: '#f5f7f8',
+      density: 78,
+      dotSize: 102,
+      speed: 100,
+      peak: 48,
+      archHeight: 62,
+      thickness: 120,
+      falloff: 360,
+      pointerRadius: 220,
+      pointerStrength: 34,
+      pointerEnabled: true
+    };
+
+    const render = (now) => {
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+      clock = (clock + dt * 0.9 * (settings.speed / 50)) % 6283;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = container.getBoundingClientRect();
+      const bw = Math.max(1, Math.round(rect.width * dpr));
+      const bh = Math.max(1, Math.round(rect.height * dpr));
+
+      if (canvas.width !== bw || canvas.height !== bh) {
+        canvas.width = bw;
+        canvas.height = bh;
+      }
+
+      gl.viewport(0, 0, bw, bh);
+
+      const posLerp = Math.min(1, dt * 12);
+      const activeLerp = Math.min(1, dt * 6);
+      pointerState.x += (pointerState.targetX - pointerState.x) * posLerp;
+      pointerState.y += (pointerState.targetY - pointerState.y) * posLerp;
+      pointerState.active += (pointerState.targetActive - pointerState.active) * activeLerp;
+
+      const pitchCss = Math.min(bw, bh) / dpr / settings.density;
+
+      gl.uniform2f(uniform('uRes'), bw, bh);
+      gl.uniform1f(uniform('uTime'), clock);
+      gl.uniform1f(uniform('uDpr'), dpr);
+      gl.uniform1f(uniform('uCell'), Math.max(2, pitchCss * dpr));
+      gl.uniform1f(uniform('uDot'), pitchCss * 1.2 * (settings.dotSize / 100));
+      gl.uniform1f(uniform('uPeak'), settings.peak / 100);
+      gl.uniform1f(uniform('uHeight'), settings.archHeight / 100);
+      gl.uniform1f(uniform('uThick'), settings.thickness / 100);
+      gl.uniform1f(uniform('uFall'), settings.falloff / 100);
+      gl.uniform2f(uniform('uMouse'), pointerState.x, pointerState.y);
+      gl.uniform1f(uniform('uMouseRadius'), settings.pointerRadius);
+      gl.uniform1f(uniform('uMouseStrength'), settings.pointerEnabled ? (settings.pointerStrength / 100) * pointerState.active : 0);
+
+      const bg = parseColor(settings.background, [0.03, 0.11, 0.2]);
+      const base = parseColor(settings.baseColor, [0.05, 0.49, 0.55]);
+      const accent = parseColor(settings.accentColor, [0.17, 0.71, 0.76]);
+      const high = parseColor(settings.highlight, [0.96, 0.98, 1.0]);
+
+      gl.uniform3f(uniform('uBg'), bg[0], bg[1], bg[2]);
+      gl.uniform3f(uniform('uBase'), base[0], base[1], base[2]);
+      gl.uniform3f(uniform('uAccent'), accent[0], accent[1], accent[2]);
+      gl.uniform3f(uniform('uHigh'), high[0], high[1], high[2]);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      rafId = requestAnimationFrame(render);
+    };
+
+    rafId = requestAnimationFrame(render);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      container.removeEventListener('pointermove', pointerMove);
+      container.removeEventListener('pointerleave', pointerLeave);
+      container.removeEventListener('pointercancel', pointerLeave);
+    };
+})();
+</script>
+
+<section class="section">
+    <div class="container">
+        <div class="section-head text-center reveal">
+            <h2>Everything you need to move forward</h2>
+            <p>One platform for candidates and employers, with a hiring process you can actually follow.</p>
+        </div>
+
+        <div class="grid grid-3">
+            <div class="card card-hover reveal" data-reveal-delay="0">
+                <div class="card-body">
+                    <div class="feature">
+                        <span class="feature-icon" aria-hidden="true">&#128269;</span>
+                        <div>
+                            <h3>Search that actually filters</h3>
+                            <p>Filter by location, salary, job type, arrangement and experience level. Every option comes from real listings.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card card-hover reveal" data-reveal-delay="0.08">
+                <div class="card-body">
+                    <div class="feature">
+                        <span class="feature-icon" aria-hidden="true">&#128100;</span>
+                        <div>
+                            <h3>Profiles that work for you</h3>
+                            <p>Add education, experience, skills, certifications and languages. We show you exactly what is missing.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card card-hover reveal" data-reveal-delay="0.16">
+                <div class="card-body">
+                    <div class="feature">
+                        <span class="feature-icon" aria-hidden="true">&#128209;</span>
+                        <div>
+                            <h3>Track every application</h3>
+                            <p>See where each application stands, from submitted through to interview, with a full status history.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card card-hover reveal" data-reveal-delay="0">
+                <div class="card-body">
+                    <div class="feature">
+                        <span class="feature-icon" aria-hidden="true">&#9989;</span>
+                        <div>
+                            <h3>Reviewed before it is public</h3>
+                            <p>An administrator verifies every posting, so candidates are not sorting through spam or scams.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card card-hover reveal" data-reveal-delay="0.08">
+                <div class="card-body">
+                    <div class="feature">
+                        <span class="feature-icon" aria-hidden="true">&#128202;</span>
+                        <div>
+                            <h3>Transparent salary</h3>
+                            <p>Employers state the range up front, so you know whether it is worth applying before you write a letter.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card card-hover reveal" data-reveal-delay="0.16">
+                <div class="card-body">
+                    <div class="feature">
+                        <span class="feature-icon" aria-hidden="true">&#128274;</span>
+                        <div>
+                            <h3>Your CV stays private</h3>
+                            <p>Resumes are stored privately and only released to the employer you applied to.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (Model.LatestJobs.Count > 0)
+{
+    <section class="section section-muted">
+        <div class="container">
+            <div class="section-head row-between">
+                <div>
+                    <h2>Latest vacancies</h2>
+                    <p>Recently posted roles that have passed verification.</p>
+                </div>
+                <a asp-controller="Jobs" asp-action="Index" class="btn btn-outline">View all jobs</a>
+            </div>
+
+            <div class="grid grid-3">
+                @foreach (var job in Model.LatestJobs)
+                {
+                    <div class="reveal">@await Html.PartialAsync("_JobCard", job)</div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@if (Model.PopularCategories.Count > 0)
+{
+    <section class="section">
+        <div class="container">
+            <div class="section-head text-center">
+                <h2>Browse by category</h2>
+                <p>Popular areas of hiring right now.</p>
+            </div>
+            <div class="row" style="justify-content:center">
+                @foreach (var category in Model.PopularCategories)
+                {
+                    <a asp-controller="Jobs" asp-action="Index" asp-route-category="@category.Name"
+                       class="chip" style="padding:.5rem 1rem;font-size:.9rem">
+                        @category.Name <span class="text-subtle">(@category.Count)</span>
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@if (Model.FeaturedCompanies.Count > 0)
+{
+    <section class="section section-muted">
+        <div class="container">
+            <div class="section-head row-between">
+                <div>
+                    <h2>Companies hiring in Nepal</h2>
+                    <p>Organisations with live vacancies on the platform.</p>
+                </div>
+                <a asp-controller="Companies" asp-action="Index" class="btn btn-outline">All companies</a>
+            </div>
+
+            <div class="grid grid-3">
+                @foreach (var company in Model.FeaturedCompanies)
+                {
+                    <div class="card card-hover reveal">
+                        <div class="card-body">
+                            <div class="company-header mb-2">
+                                <span class="company-logo" aria-hidden="true">@company.Name.Initials()</span>
+                                <div>
+                                    <h3 class="mb-1" style="font-size:1.05rem">
+                                        <a asp-controller="Companies" asp-action="Details" asp-route-id="@company.Id"
+                                           style="color:var(--navy-900)">@company.Name</a>
+                                    </h3>
+                                    <p class="text-sm text-muted mb-0">@company.Industry</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-muted mb-3">@(company.Description ?? company.About)</p>
+                            <a asp-controller="Companies" asp-action="Details" asp-route-id="@company.Id" class="btn btn-outline btn-sm">
+                                @company.ActiveVacancyCount open @(company.ActiveVacancyCount == 1 ? "role" : "roles")
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<section class="section">
+    <div class="container">
+        <div class="card card-pad text-center reveal" style="background:var(--navy-900);border-color:var(--navy-800)">
+            <h2 style="color:#fff">Ready to get started?</h2>
+            <p style="color:rgba(255,255,255,.8);max-width:52ch;margin-inline:auto">
+                Create a free profile as a candidate, or register your company and start posting vacancies today.
+            </p>
+            <div class="row" style="justify-content:center;margin-top:1.25rem">
+                <a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-lg">Create a candidate profile</a>
+                <a asp-controller="Account" asp-action="Register" asp-route-accountType="Employer" class="btn btn-light-outline btn-lg">
+                    Register as an employer
+                </a>
+            </div>
+        </div>
+    </div>
+</section>

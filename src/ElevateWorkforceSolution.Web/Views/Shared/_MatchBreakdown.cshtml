@@ -1,0 +1,72 @@
+@model SkillMatchResultDto
+
+<div class="card">
+    <div class="card-header">
+        <h2>Your match for this role</h2>
+        <span class="badge badge-teal">@Model.CompatibilityPercentage% match</span>
+    </div>
+    <div class="card-body">
+        <div class="meter mb-3">
+            <div class="meter-track">
+                <div class="meter-fill" data-meter-fill="@Model.CompatibilityPercentage"></div>
+            </div>
+            <span class="meter-value">@Model.CompatibilityPercentage%</span>
+        </div>
+
+        <dl class="detail-list mb-3">
+            <div>
+                <dt>Skills (@Model.SkillMatchPercentage%)</dt>
+                <dd>@Model.MatchingSkills.Count matched of @(Model.MatchingSkills.Count + Model.MissingSkills.Count) required</dd>
+            </div>
+            <div>
+                <dt>Experience</dt>
+                <dd>@Model.ExperienceScore%</dd>
+            </div>
+            <div>
+                <dt>Location</dt>
+                <dd>@Model.LocationScore%</dd>
+            </div>
+            <div>
+                <dt>Profile completeness</dt>
+                <dd>@Model.ProfileCompletenessScore%</dd>
+            </div>
+        </dl>
+
+        @if (Model.MatchingSkills.Count > 0)
+        {
+            <p class="text-sm fw-700 mb-1">Skills you have</p>
+            <ul class="tag-list mb-3">
+                @foreach (var skill in Model.MatchingSkills)
+                {
+                    <li>
+                        <span class="chip" title="@(skill.IsMandatory ? "Mandatory skill" : "Desirable skill")">
+                            &#10003; @skill.Skill
+                        </span>
+                    </li>
+                }
+            </ul>
+        }
+
+        @if (Model.MissingSkills.Count > 0)
+        {
+            <p class="text-sm fw-700 mb-1">Skills the employer asked for that are not on your profile</p>
+            <ul class="tag-list mb-3">
+                @foreach (var skill in Model.MissingSkills)
+                {
+                    <li><span class="chip">@skill</span></li>
+                }
+            </ul>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.ExperienceNote))
+        {
+            <p class="text-sm text-muted"><span class="fw-700">Experience:</span> @Model.ExperienceNote</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.LocationNote))
+        {
+            <p class="text-sm text-muted"><span class="fw-700">Location:</span> @Model.LocationNote</p>
+        }
+
+        <p class="text-xs text-subtle mt-3 mb-0">@Model.Disclaimer</p>
+    </div>
+</div>

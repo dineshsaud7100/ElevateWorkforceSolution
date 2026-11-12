@@ -1,0 +1,213 @@
+@model JobDetailsViewModel
+@inject ICurrentUserService CurrentUser
+@{
+    var job = Model.Job;
+    ViewData["Title"] = job.Title;
+    ViewData["Description"] = $"{job.Title} at {job.CompanyName} in {(job.WorkLocation ?? "Nepal")}";
+
+    // Only a signed-in candidate can apply; the service is the final authority on eligibility.
+    var canApply = job.AcceptsApplications && !job.HasApplied;
+}
+
+<div class="page">
+    <div class="container">
+        <nav aria-label="Breadcrumb" class="mb-3 text-sm">
+            <a asp-controller="Jobs" asp-action="Index">Vacancies</a>
+            <span class="text-subtle" aria-hidden="true"> / </span>
+            <span class="text-muted">@job.Title</span>
+        </nav>
+
+        <div class="card card-pad mb-3">
+            <div class="row-between" style="align-items:flex-start">
+                <div style="flex:1;min-width:260px">
+                    <div class="row mb-2">
+                        <span class="badge @job.Status.CssClass()">@job.Status.Display()</span>
+                        @if (job.IsDeadlinePassed)
+                        {
+                            <span class="badge badge-danger">Deadline passed</span>
+                        }
+                    </div>
+                    <h1 class="mb-1">@job.Title</h1>
+                    <p class="text-muted mb-0">
+                        <a asp-controller="Companies" asp-action="Details" asp-route-id="@job.CompanyId">@job.CompanyName</a>
+                        @if (!string.IsNullOrWhiteSpace(job.WorkLocation))
+                        {
+                            <span aria-hidden="true"> &middot; </span>@job.WorkLocation
+                        }
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-layout">
+            <div class="stack">
+                @if (!string.IsNullOrWhiteSpace(job.ModerationNotes) && job.Status == VacancyStatus.Rejected)
+                {
+                    <div class="alert alert-warning">
+                        <span aria-hidden="true">&#9888;</span>
+                        <div>
+                            <strong>Not approved for publication.</strong>
+                            <div>@job.ModerationNotes</div>
+                        </div>
+                    </div>
+                }
+
+                @if (job.HasApplied)
+                {
+                    <div class="alert alert-success">
+                        <span aria-hidden="true">&#10003;</span>
+                        <div>
+                            <strong>You have applied to this role.</strong>
+                            Track the progress from your applications page.
+                            <div class="mt-1">
+                                <a asp-controller="Applications" asp-action="MyApplications" class="btn btn-outline btn-sm">View my applications</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (!job.AcceptsApplications)
+                {
+                    <div class="alert alert-warning">
+                        <span aria-hidden="true">&#9888;</span>
+                        <span>This vacancy is not accepting applications at the moment.</span>
+                    </div>
+                }
+
+                <div class="card">
+                    <div class="card-body">
+                        @if (!string.IsNullOrWhiteSpace(job.Description))
+                        {
+                            <div class="prose-block">
+                                <h3>About this role</h3>
+                                @foreach (var paragraph in job.Description.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <p>@paragraph</p>
+                                }
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(job.Responsibilities))
+                        {
+                            <div class="prose-block">
+                                <h3>Responsibilities</h3>
+                                <ul>
+                                    @foreach (var line in job.Responsibilities.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                                    {
+                                        <li>@line</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(job.Requirements))
+                        {
+                            <div class="prose-block">
+                                <h3>Requirements</h3>
+                                <ul>
+                                    @foreach (var line in job.Requirements.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                                    {
+                                        <li>@line</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(job.Benefits))
+                        {
+                            <div class="prose-block">
+                                <h3>Benefits</h3>
+                                <ul>
+                                    @foreach (var line in job.Benefits.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                                    {
+                                        <li>@line</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        @if (job.RequiredSkills.Count > 0)
+                        {
+                            <div class="prose-block">
+                                <h3>Skills</h3>
+                                <ul class="tag-list">
+                                    @foreach (var skill in job.RequiredSkills)
+                                    {
+                                        <li><span class="chip">@skill</span></li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @if (Model.SimilarJobs.Count > 0)
+                {
+                    <div>
+                        <div class="section-head">
+                            <h2>Similar vacancies</h2>
+                        </div>
+                        <div class="grid grid-2">
+                            @foreach (var similar in Model.SimilarJobs)
+                            {
+                                <div class="reveal">@await Html.PartialAsync("_JobCard", similar)</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <aside class="detail-aside stack">
+                <div class="card">
+                    <div class="card-body">
+                        @if (canApply)
+                        {
+                            @if (CurrentUser.IsJobSeeker)
+                            {
+                                <a asp-controller="Applications" asp-action="Apply" asp-route-jobId="@job.Id" class="btn btn-primary btn-block btn-lg">
+                                    Apply for this role
+                                </a>
+                            }
+                            else if (CurrentUser.IsAuthenticated)
+                            {
+                                <div class="form-alert form-alert-info mb-0">
+                                    Applications are made from a candidate account. Employers and administrators cannot apply.
+                                </div>
+                            }
+                            else
+                            {
+                                <a asp-controller="Account" asp-action="Register" asp-route-returnUrl="@Url.Action("Apply","Applications", new { jobId = job.Id })"
+                                   class="btn btn-primary btn-block btn-lg">Create a profile to apply</a>
+                            }
+                        }
+
+                        @if (CurrentUser.IsJobSeeker)
+                        {
+                            <form asp-controller="Jobs" asp-action="ToggleSave" method="post" class="mt-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@job.Id" />
+                                <input type="hidden" name="returnUrl" value="@(Url.Action("Details", "Jobs", new { id = job.Id }))" />
+                                <button type="submit" class="btn @(job.IsSaved ? "btn-navy" : "btn-outline") btn-block">
+                                    @(job.IsSaved ? "&#10003; Saved - remove" : "Save this job")
+                                </button>
+                            </form>
+                        }
+
+                        @if (job.ApplicationDeadline.HasValue)
+                        {
+                            <p class="text-sm text-muted text-center mt-2 mb-0">
+                                Applications close @job.ApplicationDeadline.Value.ToString("dd MMM yyyy")
+                            </p>
+                        }
+                    </div>
+                </div>
+
+                @if (Model.Match is not null)
+                {
+                    @await Html.PartialAsync("_MatchBreakdown", Model.Match)
+                }
+
+                @await Html.PartialAsync("_JobOverview", job)
+            </aside>
+        </div>
+    </div>
+</div>

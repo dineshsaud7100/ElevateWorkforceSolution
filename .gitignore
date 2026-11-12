@@ -1,0 +1,23 @@
+# Environment and sensitive configuration
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+appsettings.Production.json
+secrets.json
+# Private application configuration
+appsettings.json
+appsettings.*.json
+!appsettings.example.json
+# .NET generated files
+**/bin/
+**/obj/
+
+# User-uploaded private files
+src/ElevateWorkforceSolution.Web/App_Data/uploads/
+
+# Sensitive configuration
+appsettings.json
+appsettings.*.json
+!appsettings.example.json
+

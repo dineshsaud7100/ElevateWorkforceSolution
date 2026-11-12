@@ -1,0 +1,15 @@
+@model EmployerVacanciesViewModel
+@{
+    ViewData["Title"] = "My vacancies";
+}
+
+<div class="page"><div class="container">
+<div class="page-header-row"><div><h1>My vacancies</h1><p class="mb-0">Manage live, pending, rejected and closed vacancies.</p></div><a asp-action="CreateVacancy" class="btn btn-primary">Post vacancy</a></div>
+<form method="get" asp-action="Vacancies" class="row g-2 mb-3">
+    <div class="col-md-4"><input asp-for="Keyword" class="form-control" placeholder="Search vacancy" /></div>
+    <div class="col-md-4"><select asp-for="Status" asp-items="Model.StatusOptions" class="form-select"></select></div>
+    <div class="col-md-4"><button class="btn btn-outline" type="submit">Filter</button></div>
+</form>
+@if (Model.Results.Items.Count == 0) { <div class="card"><div class="card-body text-muted">No vacancies match these filters.</div></div> }
+else { <div class="card table-wrap"><table class="table"><thead><tr><th>Vacancy</th><th>Location</th><th>Status</th><th>Applications</th><th></th></tr></thead><tbody>@foreach(var v in Model.Results.Items){<tr><td><strong>@v.Title</strong><div class="text-sm text-muted">@v.JobType · @v.WorkArrangement</div></td><td>@v.WorkLocation</td><td><span class="badge @v.Status.CssClass()">@v.Status</span></td><td>@v.ApplicationCount</td><td><a asp-action="EditVacancy" asp-route-id="@v.Id" class="btn btn-outline btn-sm">Edit</a></td></tr>}</tbody></table></div> }
+</div></div>

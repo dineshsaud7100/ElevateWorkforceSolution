@@ -1,0 +1,33 @@
+@model IReadOnlyList<JobCardDto>
+@{
+    ViewData["Title"] = "Recommended jobs";
+}
+
+<div class="page">
+    <div class="container">
+        <div class="page-header">
+            <h1>Recommended for you</h1>
+            <p>
+                These vacancies share skills, location or experience level with your profile. The
+                ranking is produced by rules in this application, not by an external service.
+            </p>
+        </div>
+
+        @if (Model.Count == 0)
+        {
+            var emptyState = ("&#128269;", "No recommendations yet", "Add a few skills to your profile and we will match them against open vacancies.", Url.Action("Skills", "Candidate", new { jobSeekerId = (int?)null }), "Add skills");
+            <div class="card">
+                @await Html.PartialAsync("_EmptyState", emptyState, new ViewDataDictionary(ViewData))
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-3">
+                @foreach (var job in Model)
+                {
+                    <div class="reveal">@await Html.PartialAsync("_JobCard", job)</div>
+                }
+            </div>
+        }
+    </div>
+</div>
